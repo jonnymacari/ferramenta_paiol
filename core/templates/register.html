@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load form_filters %}
+
+{% block title %}Criar Conta{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-center align-items-center" style="height: 90vh;">
+  <div class="card shadow p-5" style="width: 100%; max-width: 500px;">
+    <h3 class="text-center mb-4 text-primary">Criar uma Conta</h3>
+
+    <form method="post">
+      {% csrf_token %}
+
+      {% for field in form %}
+        <div class="mb-3">
+          <label class="form-label">{{ field.label }}</label>
+          <div class="input-group">
+            {% if field.name == 'username' %}
+              <span class="input-group-text">👤</span>
+            {% elif field.name == 'email' %}
+              <span class="input-group-text">📧</span>
+            {% elif field.name == 'password1' %}
+              <span class="input-group-text">🔒</span>
+            {% elif field.name == 'password2' %}
+              <span class="input-group-text">✅</span>
+            {% endif %}
+            {{ field|add_class:"form-control" }}
+          </div>
+          {% if field.errors %}
+            <div class="text-danger small">
+              {{ field.errors|striptags }}
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+
+      <div class="d-grid mt-4">
+        <button type="submit" class="btn btn-warning text-dark fw-bold">Registrar</button>
+      </div>
+    </form>
+
+    <p class="text-center mt-3 mb-0">
+      Já tem uma conta? <a href="{% url 'login' %}">Faça login</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

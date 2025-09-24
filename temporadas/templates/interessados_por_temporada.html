@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}Monitores interessados na temporada: {{ temporada.nome }}{% endblock %}
+
+{% block content %}
+<table border="1">
+    <thead>
+        <tr>
+            <th>Monitor</th>
+            <th>Status atual</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for interesse in interessados %}
+        <tr>
+            <td>{{ interesse.monitor.username }}</td>
+            <td>{{ interesse.get_status_display }}</td>
+            <td>
+                {% if interesse.status == 'interessado' %}
+                <form method="post" action="{% url 'alterar_status_interesse' interesse.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="status" value="aprovado">
+                    <button type="submit">Aprovar</button>
+                </form>
+                <form method="post" action="{% url 'alterar_status_interesse' interesse.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="status" value="recusado">
+                    <button type="submit">Recusar</button>
+                </form>
+                {% else %}
+                    Nenhuma ação disponível
+                {% endif %}
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="3">Nenhum monitor demonstrou interesse ainda.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<br>
+<a href="{% url 'lista_temporadas' %}">← Voltar</a>
+{% endblock %}

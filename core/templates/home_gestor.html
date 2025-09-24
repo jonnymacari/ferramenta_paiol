@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard do Gestor{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Olá, {{ user.first_name }}! 👋</h2>
+
+<div class="row g-4">
+  <div class="col-md-4">
+    <div class="card border-primary">
+      <div class="card-body text-primary">
+        <h5 class="card-title">Temporadas Criadas</h5>
+        <p class="card-text display-6">{{ total_temporadas }}</p>
+        <a href="{% url 'lista_temporadas' %}" class="btn btn-outline-primary">Ver Temporadas</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card border-warning">
+      <div class="card-body text-warning">
+        <h5 class="card-title">Interesses Pendentes</h5>
+        <p class="card-text display-6">{{ interesses_pendentes }}</p>
+        <a href="{% url 'lista_temporadas' %}" class="btn btn-outline-warning">Aprovar Monitores</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card border-info">
+      <div class="card-body text-info">
+        <h5 class="card-title">E-mails Não Enviados</h5>
+        <p class="card-text display-6">{{ temporadas_sem_email }}</p>
+        <a href="{% url 'lista_temporadas' %}" class="btn btn-outline-info">Enviar E-mails</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

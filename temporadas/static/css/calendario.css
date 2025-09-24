@@ -1,0 +1,31 @@
+.calendario {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-top: 20px;
+}
+
+.cabecalho, .linha {
+    display: grid;
+    grid-template-columns: 200px repeat(auto-fit, minmax(40px, 1fr));
+    align-items: center;
+}
+
+.coluna-dia, .celula {
+    text-align: center;
+    border: 1px solid #ccc;
+    height: 30px;
+    font-size: 12px;
+}
+
+.nome-temporada, .titulo-linha {
+    padding: 5px;
+    font-weight: bold;
+    background-color: #f2f2f2;
+    text-align: left;
+}
+
+.celula.ativo {
+    background-color: #4CAF50;
+    border-color: #3e8e41;
+}
