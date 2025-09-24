@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block title %}Deletar Usuário{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Confirmar Exclusão</h4>
+                <a href="{% url 'manage_users' %}" class="btn btn-outline-light btn-sm">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Atenção!</strong> Esta ação não pode ser desfeita.
+                </div>
+
+                <p>Você tem certeza que deseja deletar o usuário:</p>
+                
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ user_obj.username }}</h5>
+                        <p class="card-text">
+                            <strong>Nome:</strong> 
+                            {% if user_obj.first_name %}
+                                {{ user_obj.first_name }} {{ user_obj.last_name }}
+                            {% else %}
+                                Não informado
+                            {% endif %}
+                            <br>
+                            <strong>E-mail:</strong> {{ user_obj.email|default:"Não informado" }}<br>
+                            <strong>Tipo:</strong> 
+                            <span class="badge 
+                                {% if user_obj.user_type == 'admin' %}bg-danger
+                                {% elif user_obj.user_type == 'gestor' %}bg-primary
+                                {% else %}bg-secondary{% endif %}">
+                                {{ user_obj.get_user_type_display }}
+                            </span><br>
+                            <strong>Cadastrado em:</strong> {{ user_obj.date_joined|date:"d/m/Y H:i" }}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <h6>Consequências da exclusão:</h6>
+                    <ul class="text-muted">
+                        <li>Todos os dados do usuário serão permanentemente removidos</li>
+                        {% if user_obj.user_type == 'monitor' %}
+                            <li>Todas as participações em temporadas serão removidas</li>
+                            <li>Histórico de interesses será perdido</li>
+                        {% endif %}
+                        <li>O usuário não poderá mais acessar o sistema</li>
+                    </ul>
+                </div>
+
+                <form method="post" class="mt-4">
+                    {% csrf_token %}
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'manage_users' %}" class="btn btn-secondary me-md-2">Cancelar</a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Sim, Deletar Usuário
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{% endblock %}
+

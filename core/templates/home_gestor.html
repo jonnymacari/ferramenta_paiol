@@ -79,6 +79,61 @@
   </div>
 </div>
 
+<!-- Seção de Gerenciamento -->
+<div class="row g-4 mb-4">
+  <div class="col-12">
+    <h3 class="mb-3">Gerenciamento</h3>
+  </div>
+  
+  <div class="col-md-3">
+    <div class="card border-info">
+      <div class="card-body text-center">
+        <h6 class="card-title">Usuários</h6>
+        <p class="text-muted">Criar, editar e gerenciar usuários</p>
+        <a href="{% url 'manage_users' %}" class="btn btn-info">
+          <i class="fas fa-users"></i> Gerenciar Usuários
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="card border-primary">
+      <div class="card-body text-center">
+        <h6 class="card-title">Temporadas</h6>
+        <p class="text-muted">Visualizar e gerenciar temporadas</p>
+        <a href="{% url 'lista_temporadas' %}" class="btn btn-primary">
+          <i class="fas fa-calendar"></i> Ver Temporadas
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="card border-warning">
+      <div class="card-body text-center">
+        <h6 class="card-title">Monitores</h6>
+        <p class="text-muted">Aprovar participações de monitores</p>
+        <a href="{% url 'lista_temporadas' %}" class="btn btn-warning">
+          <i class="fas fa-user-check"></i> Aprovar Monitores
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="card border-success">
+      <div class="card-body text-center">
+        <h6 class="card-title">E-mails</h6>
+        <p class="text-muted">Enviar comunicações</p>
+        <a href="{% url 'lista_temporadas' %}" class="btn btn-success">
+          <i class="fas fa-envelope"></i> Enviar E-mails
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Últimos Usuários Cadastrados -->
 <div class="row g-4">
   <div class="col-12">

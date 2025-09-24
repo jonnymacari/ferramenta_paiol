@@ -1,0 +1,202 @@
+{% extends 'base.html' %}
+{% block title %}Detalhes do Usuário{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Detalhes do Usuário</h4>
+                <div>
+                    <a href="{% url 'edit_user' user_obj.id %}" class="btn btn-primary btn-sm me-2">
+                        <i class="fas fa-edit"></i> Editar
+                    </a>
+                    <a href="{% url 'manage_users' %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-arrow-left"></i> Voltar
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Informações Básicas</h6>
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>Nome de usuário:</strong></td>
+                                <td>{{ user_obj.username }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>E-mail:</strong></td>
+                                <td>{{ user_obj.email|default:"Não informado" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Nome completo:</strong></td>
+                                <td>
+                                    {% if user_obj.first_name %}
+                                        {{ user_obj.first_name }} {{ user_obj.last_name }}
+                                    {% else %}
+                                        <span class="text-muted">Não informado</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Tipo de usuário:</strong></td>
+                                <td>
+                                    <span class="badge 
+                                        {% if user_obj.user_type == 'admin' %}bg-danger
+                                        {% elif user_obj.user_type == 'gestor' %}bg-primary
+                                        {% else %}bg-secondary{% endif %}">
+                                        {{ user_obj.get_user_type_display }}
+                                    </span>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Informações de Contato</h6>
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>CPF:</strong></td>
+                                <td>{{ user_obj.cpf|default:"Não informado" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Telefone:</strong></td>
+                                <td>{{ user_obj.telefone|default:"Não informado" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Data de nascimento:</strong></td>
+                                <td>
+                                    {% if user_obj.data_nascimento %}
+                                        {{ user_obj.data_nascimento|date:"d/m/Y" }}
+                                    {% else %}
+                                        <span class="text-muted">Não informado</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Endereço:</strong></td>
+                                <td>{{ user_obj.endereco|default:"Não informado" }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Status da Conta</h6>
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>Data de cadastro:</strong></td>
+                                <td>{{ user_obj.date_joined|date:"d/m/Y H:i" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Último login:</strong></td>
+                                <td>
+                                    {% if user_obj.last_login %}
+                                        {{ user_obj.last_login|date:"d/m/Y H:i" }}
+                                    {% else %}
+                                        <span class="text-muted">Nunca fez login</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Conta ativa:</strong></td>
+                                <td>
+                                    {% if user_obj.is_active %}
+                                        <span class="badge bg-success">Ativa</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Inativa</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% if user_obj.user_type == 'monitor' %}
+                            <tr>
+                                <td><strong>Cadastro completo:</strong></td>
+                                <td>
+                                    {% if user_obj.cadastro_completo %}
+                                        <span class="badge bg-success">Completo</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Incompleto</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endif %}
+                        </table>
+                    </div>
+                    
+                    {% if user_obj.user_type == 'monitor' and temporadas_info %}
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Atividades (Monitor)</h6>
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>Participações confirmadas:</strong></td>
+                                <td>
+                                    <span class="badge bg-success">{{ temporadas_info.participacoes }}</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Interesses pendentes:</strong></td>
+                                <td>
+                                    <span class="badge bg-warning">{{ temporadas_info.pendentes }}</span>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Ações Rápidas</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'edit_user' user_obj.id %}" class="btn btn-primary">
+                        <i class="fas fa-edit"></i> Editar Usuário
+                    </a>
+                    
+                    {% if user_obj != user %}
+                        <a href="{% url 'delete_user' user_obj.id %}" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Deletar Usuário
+                        </a>
+                    {% endif %}
+                    
+                    {% if user_obj.user_type == 'monitor' and not user_obj.cadastro_completo %}
+                        <div class="alert alert-warning mt-3">
+                            <small>
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Este monitor ainda não completou seu cadastro.
+                            </small>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        {% if user_obj.user_type == 'admin' %}
+        <div class="card mt-3">
+            <div class="card-header bg-danger text-white">
+                <h6 class="mb-0">Usuário Administrador</h6>
+            </div>
+            <div class="card-body">
+                <small class="text-muted">
+                    Este usuário possui privilégios de administrador e acesso total ao sistema.
+                </small>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{% endblock %}
+

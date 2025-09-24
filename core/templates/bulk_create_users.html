@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% block title %}Criar Usuários em Lote{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Criar Usuários em Lote (CSV)</h4>
+                <a href="{% url 'manage_users' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </a>
+            </div>
+            <div class="card-body">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <!-- Instruções -->
+                <div class="alert alert-info">
+                    <h5><i class="fas fa-info-circle"></i> Instruções para o arquivo CSV</h5>
+                    <p><strong>Formato obrigatório:</strong> O arquivo deve conter as seguintes colunas (na ordem exata):</p>
+                    <ul>
+                        <li><strong>username</strong> - Nome de usuário (obrigatório, único)</li>
+                        <li><strong>email</strong> - E-mail (obrigatório, único)</li>
+                        <li><strong>first_name</strong> - Nome (opcional)</li>
+                        <li><strong>last_name</strong> - Sobrenome (opcional)</li>
+                        <li><strong>user_type</strong> - Tipo: admin, gestor ou monitor (opcional, padrão: monitor)</li>
+                        <li><strong>cpf</strong> - CPF (opcional)</li>
+                        <li><strong>telefone</strong> - Telefone (opcional)</li>
+                        <li><strong>password</strong> - Senha (obrigatório)</li>
+                    </ul>
+                    <p><strong>Exemplo de linha:</strong><br>
+                    <code>joao123,joao@email.com,João,Silva,monitor,123.456.789-00,(11) 99999-9999,senha123</code></p>
+                </div>
+
+                <!-- Exemplo de CSV -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">Exemplo de arquivo CSV</h6>
+                    </div>
+                    <div class="card-body">
+                        <pre class="bg-light p-3 rounded"><code>username,email,first_name,last_name,user_type,cpf,telefone,password
+monitor1,monitor1@email.com,João,Silva,monitor,123.456.789-00,(11) 99999-9999,senha123
+monitor2,monitor2@email.com,Maria,Santos,monitor,987.654.321-00,(11) 88888-8888,senha456
+gestor1,gestor1@email.com,Carlos,Oliveira,gestor,111.222.333-44,(11) 77777-7777,senha789</code></pre>
+                        <small class="text-muted">
+                            <i class="fas fa-download"></i> 
+                            <a href="data:text/csv;charset=utf-8,username%2Cemail%2Cfirst_name%2Clast_name%2Cuser_type%2Ccpf%2Ctelefone%2Cpassword%0Amonitor1%2Cmonitor1%40email.com%2CJo%C3%A3o%2CSilva%2Cmonitor%2C123.456.789-00%2C%2811%29%2099999-9999%2Csenha123%0Amonitor2%2Cmonitor2%40email.com%2CMaria%2CSantos%2Cmonitor%2C987.654.321-00%2C%2811%29%2088888-8888%2Csenha456" 
+               download="exemplo_usuarios.csv">Baixar arquivo de exemplo</a>
+                        </small>
+                    </div>
+                </div>
+
+                <!-- Formulário de Upload -->
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.csv_file.id_for_label }}" class="form-label">{{ form.csv_file.label }} *</label>
+                        {{ form.csv_file }}
+                        {% if form.csv_file.errors %}
+                            <div class="text-danger">{{ form.csv_file.errors }}</div>
+                        {% endif %}
+                        {% if form.csv_file.help_text %}
+                            <div class="form-text">{{ form.csv_file.help_text }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Atenção:</strong> 
+                        <ul class="mb-0 mt-2">
+                            <li>Verifique se não há usuários duplicados no arquivo</li>
+                            <li>Nomes de usuário e e-mails devem ser únicos no sistema</li>
+                            <li>O processo não pode ser desfeito facilmente</li>
+                            <li>Máximo de 5MB por arquivo</li>
+                        </ul>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'manage_users' %}" class="btn btn-secondary me-md-2">Cancelar</a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-upload"></i> Processar CSV
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{% endblock %}
+

@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% block title %}Gerenciar Usuários{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Gerenciar Usuários</h2>
+    <div>
+        <a href="{% url 'create_user' %}" class="btn btn-primary me-2">
+            <i class="fas fa-plus"></i> Novo Usuário
+        </a>
+        <a href="{% url 'bulk_create_users' %}" class="btn btn-success">
+            <i class="fas fa-upload"></i> Upload CSV
+        </a>
+    </div>
+</div>
+
+<!-- Filtros e Busca -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-6">
+                <label for="search" class="form-label">Buscar</label>
+                <input type="text" class="form-control" id="search" name="search" 
+                       value="{{ search_query }}" placeholder="Nome, email, usuário...">
+            </div>
+            <div class="col-md-4">
+                <label for="user_type" class="form-label">Tipo de Usuário</label>
+                <select class="form-control" id="user_type" name="user_type">
+                    <option value="">Todos</option>
+                    {% for value, label in user_types %}
+                        <option value="{{ value }}" {% if user_type_filter == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-outline-primary me-2">Filtrar</button>
+                <a href="{% url 'manage_users' %}" class="btn btn-outline-secondary">Limpar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Lista de Usuários -->
+<div class="card">
+    <div class="card-body">
+        {% if page_obj %}
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Usuário</th>
+                            <th>Nome</th>
+                            <th>Email</th>
+                            <th>Tipo</th>
+                            <th>Cadastro</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user_obj in page_obj %}
+                        <tr>
+                            <td>
+                                <strong>{{ user_obj.username }}</strong>
+                            </td>
+                            <td>
+                                {% if user_obj.first_name %}
+                                    {{ user_obj.first_name }} {{ user_obj.last_name }}
+                                {% else %}
+                                    <span class="text-muted">Não informado</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ user_obj.email|default:"Não informado" }}</td>
+                            <td>
+                                <span class="badge 
+                                    {% if user_obj.user_type == 'admin' %}bg-danger
+                                    {% elif user_obj.user_type == 'gestor' %}bg-primary
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ user_obj.get_user_type_display }}
+                                </span>
+                            </td>
+                            <td>{{ user_obj.date_joined|date:"d/m/Y" }}</td>
+                            <td>
+                                {% if user_obj.user_type == 'monitor' %}
+                                    {% if user_obj.cadastro_completo %}
+                                        <span class="badge bg-success">Completo</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Incompleto</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="badge bg-info">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{% url 'user_detail' user_obj.id %}" 
+                                       class="btn btn-outline-info" title="Ver detalhes">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'edit_user' user_obj.id %}" 
+                                       class="btn btn-outline-primary" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% if user_obj != user %}
+                                        <a href="{% url 'delete_user' user_obj.id %}" 
+                                           class="btn btn-outline-danger" title="Deletar">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginação -->
+            {% if page_obj.has_other_pages %}
+                <nav aria-label="Navegação de páginas">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if user_type_filter %}&user_type={{ user_type_filter }}{% endif %}">Primeira</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if user_type_filter %}&user_type={{ user_type_filter }}{% endif %}">Anterior</a>
+                            </li>
+                        {% endif %}
+
+                        <li class="page-item active">
+                            <span class="page-link">
+                                Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                            </span>
+                        </li>
+
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if user_type_filter %}&user_type={{ user_type_filter }}{% endif %}">Próxima</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if user_type_filter %}&user_type={{ user_type_filter }}{% endif %}">Última</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+
+        {% else %}
+            <div class="text-center py-4">
+                <p class="text-muted">Nenhum usuário encontrado.</p>
+                <a href="{% url 'create_user' %}" class="btn btn-primary">Criar Primeiro Usuário</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{% endblock %}
+
