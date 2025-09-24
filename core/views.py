@@ -1,9 +1,10 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required, user_passes_test
-from .forms import CustomUserCreationForm
+from .forms import CustomUserCreationForm, CompleteProfileForm
 from temporadas.models import Temporada, InteresseTemporada
 from temporadas.utils import is_gestor, is_monitor
+from django.contrib import messages
 
 
 def public_home(request):
@@ -56,14 +57,30 @@ def home(request):
 @login_required
 @user_passes_test(is_gestor)
 def home_gestor(request):
+    from .models import CustomUser
+    
     total_temporadas = Temporada.objects.count()
     interesses_pendentes = InteresseTemporada.objects.filter(status='pendente').count()
     temporadas_sem_email = Temporada.objects.filter(email_enviado=False).count()
+    
+    # Informações de todos os usuários para o dashboard do gestor
+    total_usuarios = CustomUser.objects.count()
+    usuarios_por_tipo = {
+        'admin': CustomUser.objects.filter(user_type='admin').count(),
+        'gestor': CustomUser.objects.filter(user_type='gestor').count(),
+        'monitor': CustomUser.objects.filter(user_type='monitor').count(),
+    }
+    
+    # Últimos usuários cadastrados
+    ultimos_usuarios = CustomUser.objects.order_by('-date_joined')[:5]
 
     return render(request, 'home_gestor.html', {
         'total_temporadas': total_temporadas,
         'interesses_pendentes': interesses_pendentes,
-        'temporadas_sem_email': temporadas_sem_email
+        'temporadas_sem_email': temporadas_sem_email,
+        'total_usuarios': total_usuarios,
+        'usuarios_por_tipo': usuarios_por_tipo,
+        'ultimos_usuarios': ultimos_usuarios,
     })
 
 
@@ -91,3 +108,19 @@ def home_monitor(request):
         'temporadas_disponiveis': temporadas_disponiveis,
         'minhas_temporadas': minhas_temporadas
     })
+
+
+@login_required
+@user_passes_test(is_monitor)
+def complete_profile(request):
+    """View para completar o perfil do monitor"""
+    if request.method == 'POST':
+        form = CompleteProfileForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Perfil atualizado com sucesso!')
+            return redirect('home')
+    else:
+        form = CompleteProfileForm(instance=request.user)
+    
+    return render(request, 'complete_profile.html', {'form': form})

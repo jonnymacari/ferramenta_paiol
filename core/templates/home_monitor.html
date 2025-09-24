@@ -2,7 +2,15 @@
 {% block title %}Dashboard do Monitor{% endblock %}
 
 {% block content %}
-<h2 class="mb-4">Bem-vindo(a), {{ user.first_name }}! 🎒</h2>
+<h2 class="mb-4">Bem-vindo(a), {{ user.first_name|default:user.username }}! 🎒</h2>
+
+{% if not user.cadastro_completo %}
+<div class="alert alert-warning alert-dismissible fade show" role="alert">
+  <strong>Atenção!</strong> Seu cadastro está incompleto. Complete suas informações para ter acesso total ao sistema.
+  <a href="{% url 'complete_profile' %}" class="btn btn-sm btn-warning ms-2">Completar Perfil</a>
+  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
 
 <div class="row g-4">
   <div class="col-md-6">
@@ -25,4 +33,18 @@
     </div>
   </div>
 </div>
+
+{% if user.cadastro_completo %}
+<div class="row g-4 mt-3">
+  <div class="col-12">
+    <div class="card border-info">
+      <div class="card-body">
+        <h5 class="card-title text-info">✅ Perfil Completo</h5>
+        <p class="card-text">Seu cadastro está completo! Você tem acesso total ao sistema.</p>
+        <a href="{% url 'complete_profile' %}" class="btn btn-outline-info btn-sm">Editar Perfil</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
 {% endblock %}

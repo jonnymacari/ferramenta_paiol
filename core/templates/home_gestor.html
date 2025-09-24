@@ -4,7 +4,7 @@
 {% block content %}
 <h2 class="mb-4">Olá, {{ user.first_name }}! 👋</h2>
 
-<div class="row g-4">
+<div class="row g-4 mb-4">
   <div class="col-md-4">
     <div class="card border-primary">
       <div class="card-body text-primary">
@@ -31,6 +31,95 @@
         <h5 class="card-title">E-mails Não Enviados</h5>
         <p class="card-text display-6">{{ temporadas_sem_email }}</p>
         <a href="{% url 'lista_temporadas' %}" class="btn btn-outline-info">Enviar E-mails</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Seção de Informações dos Usuários -->
+<div class="row g-4 mb-4">
+  <div class="col-12">
+    <h3 class="mb-3">Informações dos Usuários</h3>
+  </div>
+  
+  <div class="col-md-3">
+    <div class="card border-success">
+      <div class="card-body text-success">
+        <h5 class="card-title">Total de Usuários</h5>
+        <p class="card-text display-6">{{ total_usuarios }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="card border-danger">
+      <div class="card-body text-danger">
+        <h5 class="card-title">Administradores</h5>
+        <p class="card-text display-6">{{ usuarios_por_tipo.admin }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="card border-primary">
+      <div class="card-body text-primary">
+        <h5 class="card-title">Gestores</h5>
+        <p class="card-text display-6">{{ usuarios_por_tipo.gestor }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="card border-secondary">
+      <div class="card-body text-secondary">
+        <h5 class="card-title">Monitores</h5>
+        <p class="card-text display-6">{{ usuarios_por_tipo.monitor }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Últimos Usuários Cadastrados -->
+<div class="row g-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">Últimos Usuários Cadastrados</h5>
+      </div>
+      <div class="card-body">
+        {% if ultimos_usuarios %}
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>Nome de Usuário</th>
+                  <th>Email</th>
+                  <th>Tipo</th>
+                  <th>Data de Cadastro</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for usuario in ultimos_usuarios %}
+                <tr>
+                  <td>{{ usuario.username }}</td>
+                  <td>{{ usuario.email|default:"Não informado" }}</td>
+                  <td>
+                    <span class="badge 
+                      {% if usuario.user_type == 'admin' %}bg-danger
+                      {% elif usuario.user_type == 'gestor' %}bg-primary
+                      {% else %}bg-secondary{% endif %}">
+                      {{ usuario.get_user_type_display }}
+                    </span>
+                  </td>
+                  <td>{{ usuario.date_joined|date:"d/m/Y H:i" }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-muted">Nenhum usuário cadastrado ainda.</p>
+        {% endif %}
       </div>
     </div>
   </div>
