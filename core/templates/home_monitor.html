@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard do Monitor{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Bem-vindo(a), {{ user.first_name }}! 🎒</h2>
+
+<div class="row g-4">
+  <div class="col-md-6">
+    <div class="card border-success">
+      <div class="card-body text-success">
+        <h5 class="card-title">Temporadas Disponíveis</h5>
+        <p class="card-text display-6">{{ temporadas_disponiveis }}</p>
+        <a href="{% url 'listar_temporadas_monitor' %}" class="btn btn-outline-success">Ver Temporadas</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card border-secondary">
+      <div class="card-body text-secondary">
+        <h5 class="card-title">Minhas Participações</h5>
+        <p class="card-text display-6">{{ minhas_temporadas }}</p>
+        <a href="{% url 'minhas_participacoes' %}" class="btn btn-outline-secondary">Ver Minhas Temporadas</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

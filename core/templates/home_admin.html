@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+
+{% block title %}Bem-vindo Admin {{ request.user.username }}{% endblock %}
+
+{% block content %}
+<a href="/logout">Sair</a>
+{% endblock %}

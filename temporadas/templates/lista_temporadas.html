@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}Lista de Temporadas{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Temporadas Cadastradas</h2>
+    <a href="{% url 'criar_temporada' %}" class="btn btn-success">+ Nova Temporada</a>
+</div>
+
+<form method="post" action="{% url 'enviar_emails_temporadas' %}">
+    {% csrf_token %}
+    <table class="table table-hover table-bordered align-middle">
+        <thead class="table-primary text-center">
+            <tr>
+                <th scope="col"></th>
+                <th scope="col">Nome</th>
+                <th scope="col">Data Início</th>
+                <th scope="col">Data Fim</th>
+                <th scope="col">Cliente</th>
+                <th scope="col">Tipo</th>
+                <th scope="col">E-mail Enviado</th>
+                <th scope="col">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for temporada in temporadas %}
+            <tr onclick="handleRowClick(event, '{{ temporada.id }}')" style="cursor:pointer;">
+                <td class="text-center">
+                    {% if not temporada.email_enviado %}
+                    <input type="checkbox" name="temporadas" value="{{ temporada.id }}">
+                    {% endif %}
+                </td>
+                <td><strong>{{ temporada.nome }}</strong></td>
+                <td>{{ temporada.data_inicio }}</td>
+                <td>{{ temporada.data_fim }}</td>
+                <td>{{ temporada.cliente }}</td>
+                <td>{{ temporada.get_tipo_display }}</td>
+                <td class="text-center">
+                    {% if temporada.email_enviado %}
+                    ✅
+                    {% else %}
+                    ❌
+                    {% endif %}
+                </td>
+                <td class="text-center">
+                    <a href="{% url 'interessados_por_temporada' temporada.id %}"
+                        class="btn btn-sm btn-outline-primary">Ver Interessados</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <button type="submit" class="btn btn-warning mt-3">Enviar e-mails para selecionadas</button>
+</form>
+
+<script>
+    function handleRowClick(event, temporadaId) {
+        // Ignora se clicou num checkbox ou dentro de um botão
+        if (event.target.tagName === 'INPUT' || event.target.tagName === 'BUTTON' || event.target.tagName === 'A') {
+            return;
+        }
+        window.location.href = '/temporadas/' + temporadaId + '/';
+    }
+</script>
+{% endblock %}

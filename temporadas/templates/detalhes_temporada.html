@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalhes da Temporada{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Editar Temporada: {{ temporada.nome }}</h2>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#confirmModal">
+        Salvar Alterações
+    </button>
+    <a href="{% url 'lista_temporadas' %}" class="btn btn-secondary">Cancelar</a>
+</form>
+
+<script>
+    function confirmarAlteracao() {
+        return confirm("Tem certeza de que deseja salvar as alterações desta temporada?");
+    }
+</script>
+
+<!-- Modal de Confirmação -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="confirmModalLabel">Confirmar Alterações</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                Você tem certeza que deseja <strong>salvar as alterações</strong> desta temporada?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="document.querySelector('form').submit();">Sim,
+                    salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

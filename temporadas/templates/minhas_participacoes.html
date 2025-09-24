@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}Minhas Participações{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Minhas Participações em Temporadas</h2>
+
+{% if temporadas %}
+  <table class="table table-hover table-bordered align-middle">
+    <thead class="table-primary text-center">
+      <tr>
+        <th>Nome</th>
+        <th>Data Início</th>
+        <th>Data Fim</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for temporada in temporadas %}
+      <tr onclick="window.location.href='{% url 'visualizar_temporada_monitor' temporada.id %}'" style="cursor:pointer;">
+        <td><strong>{{ temporada.nome }}</strong></td>
+        <td>{{ temporada.data_inicio }}</td>
+        <td>{{ temporada.data_fim }}</td>
+        <td>{{ temporada.status }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p>Você ainda não está participando de nenhuma temporada.</p>
+{% endif %}
+{% endblock %}

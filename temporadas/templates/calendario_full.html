@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Calendário de Temporadas (Novo){% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+<style>
+    #calendar {
+        width: 100%;
+        max-width: 95vw;
+        margin: 0 auto;
+        padding: 20px 0;
+    }
+
+    .fc .fc-event {
+        font-size: 1rem;
+        padding: 4px;
+    }
+
+    .fc-event-title {
+        white-space: normal;
+    }
+
+    .fc .fc-daygrid-event {
+        height: auto;
+        min-height: 40px;
+    }
+
+    .fc .fc-daygrid-day {
+        min-height: 80px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Calendário de Temporadas (Novo)</h2>
+<div id="calendar"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/locales-all.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const calendarEl = document.getElementById('calendar');
+
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridWeek',
+            height: 'auto',
+            nowIndicator: true,
+            locale: 'pt-br',
+            events: '/temporadas/api/temporadas/',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridWeek,dayGridMonth,listWeek'
+            },
+            buttonText: {
+                today: 'Hoje',
+                month: 'Mês',
+                week: 'Semana',
+                day: 'Dia',
+                list: 'Lista'
+            },
+            eventDidMount: function(info) {
+                // Popover Bootstrap
+                const props = info.event.extendedProps;
+                const tooltipContent = `
+          <strong>${info.event.title}</strong><br>
+          Cliente: ${props.cliente}<br>
+          Tipo: ${props.tipo}<br>
+          De: ${props.data_inicio} até ${props.data_fim}
+        `;
+
+                new bootstrap.Popover(info.el, {
+                    title: 'Detalhes da Temporada',
+                    content: tooltipContent,
+                    html: true,
+                    trigger: 'hover',
+                    placement: 'top',
+                    container: 'body'
+                });
+            }
+        });
+
+        calendar.render();
+    });
+</script>
+{% endblock %}

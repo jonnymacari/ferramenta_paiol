@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Bem-vindo ao Acampamento{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column justify-content-center align-items-center" style="height: 80vh;">
+  <img src="{% static 'img/logo_acampamento.png' %}" alt="Logo Acampamento" style="max-height: 150px; margin-bottom: 30px;">
+  <h1 class="text-center mb-4 text-primary">Bem-vindo ao Sistema do Acampamento</h1>
+  <p class="mb-4 text-muted">Faça login ou crie uma conta para continuar</p>
+  <div class="d-flex gap-3">
+    <a href="{% url 'login' %}" class="btn btn-primary btn-lg">Entrar</a>
+    <a href="{% url 'register' %}" class="btn btn-warning btn-lg text-dark">Registrar</a>
+  </div>
+</div>
+{% endblock %}
