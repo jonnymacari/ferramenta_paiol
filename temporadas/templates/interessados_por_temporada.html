@@ -2,229 +2,45 @@
 
 {% block title %}Monitores interessados na temporada: {{ temporada.nome }}{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-<style>
-    .card {
-        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-        border: 1px solid rgba(0, 0, 0, 0.125);
-    }
-    
-    .table th {
-        border-top: none;
-        font-weight: 600;
-        font-size: 0.875rem;
-    }
-    
-    .badge {
-        font-size: 0.75rem;
-    }
-    
-    .btn-group .btn {
-        margin-right: 0.25rem;
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <h2 class="mb-2">👥 Monitores Interessados</h2>
-                <p class="text-muted">Temporada: <strong>{{ temporada.nome }}</strong></p>
-            </div>
-            <a href="{% url 'lista_temporadas' %}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left"></i> Voltar às Temporadas
-            </a>
-        </div>
-    </div>
-</div>
-
-<!-- Estatísticas -->
-<div class="row g-4 mb-4">
-    <div class="col-md-3">
-        <div class="card border-info">
-            <div class="card-body text-center">
-                <div class="display-6 text-info mb-2">{{ interessados.count }}</div>
-                <h6 class="card-title">Total de Interessados</h6>
-                <small class="text-muted">Monitores cadastrados</small>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3">
-        <div class="card border-success">
-            <div class="card-body text-center">
-                <div class="display-6 text-success mb-2">
-                    {{ interessados|length|add:0 }}
-                </div>
-                <h6 class="card-title">Aprovados</h6>
-                <small class="text-muted">Monitores confirmados</small>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3">
-        <div class="card border-warning">
-            <div class="card-body text-center">
-                <div class="display-6 text-warning mb-2">
-                    {{ interessados|length|add:0 }}
-                </div>
-                <h6 class="card-title">Pendentes</h6>
-                <small class="text-muted">Aguardando análise</small>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3">
-        <div class="card border-danger">
-            <div class="card-body text-center">
-                <div class="display-6 text-danger mb-2">0</div>
-                <h6 class="card-title">Recusados</h6>
-                <small class="text-muted">Não aprovados</small>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Lista de Interessados -->
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="fas fa-users me-2"></i>Lista de Monitores Interessados
-                </h5>
-            </div>
-            <div class="card-body">
-                {% if interessados %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Monitor</th>
-                                    <th>E-mail</th>
-                                    <th>Status Atual</th>
-                                    <th>Data de Interesse</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for interesse in interessados %}
-                                <tr>
-                                    <td>
-                                        <div>
-                                            <strong>{{ interesse.monitor.username }}</strong>
-                                            {% if interesse.monitor.first_name %}
-                                                <br><small class="text-muted">{{ interesse.monitor.first_name }} {{ interesse.monitor.last_name }}</small>
-                                            {% endif %}
-                                        </div>
-                                    </td>
-                                    <td>{{ interesse.monitor.email|default:"Não informado" }}</td>
-                                    <td>
-                                        {% if interesse.status == 'interessado' %}
-                                            <span class="badge bg-warning">{{ interesse.get_status_display }}</span>
-                                        {% elif interesse.status == 'aprovado' %}
-                                            <span class="badge bg-success">{{ interesse.get_status_display }}</span>
-                                        {% elif interesse.status == 'recusado' %}
-                                            <span class="badge bg-danger">{{ interesse.get_status_display }}</span>
-                                        {% else %}
-                                            <span class="badge bg-secondary">{{ interesse.get_status_display }}</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if interesse.created_at %}
-                                            {{ interesse.created_at|date:"d/m/Y H:i" }}
-                                        {% else %}
-                                            Não informado
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if interesse.status == 'interessado' %}
-                                            <div class="btn-group btn-group-sm" role="group">
-                                                <form method="post" action="{% url 'alterar_status_interesse' interesse.id %}" class="d-inline">
-                                                    {% csrf_token %}
-                                                    <input type="hidden" name="status" value="aprovado">
-                                                    <button type="submit" class="btn btn-success" title="Aprovar">
-                                                        <i class="fas fa-check"></i> Aprovar
-                                                    </button>
-                                                </form>
-                                                <form method="post" action="{% url 'alterar_status_interesse' interesse.id %}" class="d-inline">
-                                                    {% csrf_token %}
-                                                    <input type="hidden" name="status" value="recusado">
-                                                    <button type="submit" class="btn btn-danger" title="Recusar">
-                                                        <i class="fas fa-times"></i> Recusar
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        {% else %}
-                                            <span class="text-muted">
-                                                <i class="fas fa-check-circle"></i> Processado
-                                            </span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+<table border="1">
+    <thead>
+        <tr>
+            <th>Monitor</th>
+            <th>Status atual</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for interesse in interessados %}
+        <tr>
+            <td>{{ interesse.monitor.username }}</td>
+            <td>{{ interesse.get_status_display }}</td>
+            <td>
+                {% if interesse.status == 'interessado' %}
+                <form method="post" action="{% url 'alterar_status_interesse' interesse.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="status" value="aprovado">
+                    <button type="submit">Aprovar</button>
+                </form>
+                <form method="post" action="{% url 'alterar_status_interesse' interesse.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="status" value="recusado">
+                    <button type="submit">Recusar</button>
+                </form>
                 {% else %}
-                    <div class="text-center py-5">
-                        <i class="fas fa-users-slash fa-4x text-muted mb-3"></i>
-                        <h4>Nenhum monitor interessado</h4>
-                        <p class="text-muted">Ainda não há monitores que demonstraram interesse nesta temporada.</p>
-                        <a href="{% url 'lista_temporadas' %}" class="btn btn-primary">
-                            <i class="fas fa-calendar"></i> Ver Outras Temporadas
-                        </a>
-                    </div>
+                    Nenhuma ação disponível
                 {% endif %}
-            </div>
-        </div>
-    </div>
-</div>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="3">Nenhum monitor demonstrou interesse ainda.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 
-<!-- Informações da Temporada -->
-<div class="row mt-4">
-    <div class="col-12">
-        <div class="card border-info">
-            <div class="card-header bg-info text-white">
-                <h6 class="mb-0">
-                    <i class="fas fa-info-circle me-2"></i>Informações da Temporada
-                </h6>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <h6 class="text-info">📅 Detalhes</h6>
-                        <ul class="small">
-                            <li><strong>Nome:</strong> {{ temporada.nome }}</li>
-                            <li><strong>Data de Início:</strong> {{ temporada.data_inicio|date:"d/m/Y" }}</li>
-                            <li><strong>Data de Fim:</strong> {{ temporada.data_fim|date:"d/m/Y" }}</li>
-                            <li><strong>Status:</strong> 
-                                {% if temporada.ativa %}
-                                    <span class="badge bg-success">Ativa</span>
-                                {% else %}
-                                    <span class="badge bg-secondary">Inativa</span>
-                                {% endif %}
-                            </li>
-                        </ul>
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <h6 class="text-info">⚡ Ações Rápidas</h6>
-                        <div class="d-grid gap-2">
-                            <a href="{% url 'detalhes_temporada' temporada.id %}" class="btn btn-outline-info btn-sm">
-                                <i class="fas fa-eye"></i> Ver Detalhes da Temporada
-                            </a>
-                            <a href="{% url 'lista_temporadas' %}" class="btn btn-outline-secondary btn-sm">
-                                <i class="fas fa-list"></i> Listar Todas as Temporadas
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+<br>
+<a href="{% url 'lista_temporadas' %}">← Voltar</a>
 {% endblock %}

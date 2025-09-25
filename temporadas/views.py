@@ -190,20 +190,3 @@ def visualizar_temporada_monitor(request, temporada_id):
     return render(request, 'visualizar_temporada_monitor.html', {
         'temporada': temporada
     })
-
-@login_required
-@user_passes_test(is_gestor)
-def habilitar_reenvio_email(request, temporada_id):
-    """Habilitar reenvio de email para uma temporada (apenas gestores)"""
-    temporada = get_object_or_404(Temporada, id=temporada_id)
-    
-    if request.method == 'POST':
-        # Resetar flag de email enviado para permitir reenvio
-        temporada.email_enviado = False
-        temporada.save()
-        
-        from django.contrib import messages
-        messages.success(request, f'Reenvio de e-mail habilitado para a temporada "{temporada.nome}".')
-    
-    return redirect('lista_temporadas')
-
