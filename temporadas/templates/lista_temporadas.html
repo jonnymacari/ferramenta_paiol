@@ -2,66 +2,315 @@
 
 {% block title %}Lista de Temporadas{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+    .card {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        border: 1px solid rgba(0, 0, 0, 0.125);
+    }
+    
+    .table th {
+        border-top: none;
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+    
+    .badge {
+        font-size: 0.75rem;
+    }
+    
+    .btn-group .btn {
+        margin-right: 0.25rem;
+    }
+    
+    .table tbody tr:hover {
+        background-color: rgba(0, 123, 255, 0.05);
+    }
+    
+    .email-status {
+        font-size: 1.2rem;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Temporadas Cadastradas</h2>
-    <a href="{% url 'criar_temporada' %}" class="btn btn-success">+ Nova Temporada</a>
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="mb-2">📅 Temporadas Cadastradas</h2>
+                <p class="text-muted">Gerencie as temporadas e envie comunicações para monitores</p>
+            </div>
+            <a href="{% url 'criar_temporada' %}" class="btn btn-success">
+                <i class="fas fa-plus"></i> Nova Temporada
+            </a>
+        </div>
+    </div>
 </div>
 
-<form method="post" action="{% url 'enviar_emails_temporadas' %}">
-    {% csrf_token %}
-    <table class="table table-hover table-bordered align-middle">
-        <thead class="table-primary text-center">
-            <tr>
-                <th scope="col"></th>
-                <th scope="col">Nome</th>
-                <th scope="col">Data Início</th>
-                <th scope="col">Data Fim</th>
-                <th scope="col">Cliente</th>
-                <th scope="col">Tipo</th>
-                <th scope="col">E-mail Enviado</th>
-                <th scope="col">Ações</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for temporada in temporadas %}
-            <tr onclick="handleRowClick(event, '{{ temporada.id }}')" style="cursor:pointer;">
-                <td class="text-center">
-                    {% if not temporada.email_enviado %}
-                    <input type="checkbox" name="temporadas" value="{{ temporada.id }}">
-                    {% endif %}
-                </td>
-                <td><strong>{{ temporada.nome }}</strong></td>
-                <td>{{ temporada.data_inicio }}</td>
-                <td>{{ temporada.data_fim }}</td>
-                <td>{{ temporada.cliente }}</td>
-                <td>{{ temporada.get_tipo_display }}</td>
-                <td class="text-center">
-                    {% if temporada.email_enviado %}
-                    ✅
-                    {% else %}
-                    ❌
-                    {% endif %}
-                </td>
-                <td class="text-center">
-                    <a href="{% url 'interessados_por_temporada' temporada.id %}"
-                        class="btn btn-sm btn-outline-primary">Ver Interessados</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<!-- Estatísticas -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card border-primary">
+            <div class="card-body text-center">
+                <div class="display-6 text-primary mb-2">{{ temporadas.count }}</div>
+                <h6 class="card-title">Total de Temporadas</h6>
+                <small class="text-muted">Cadastradas no sistema</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card border-success">
+            <div class="card-body text-center">
+                <div class="display-6 text-success mb-2">
+                    {% for temporada in temporadas %}{% if temporada.email_enviado %}{{ forloop.counter0|add:1 }}{% endif %}{% empty %}0{% endfor %}
+                </div>
+                <h6 class="card-title">E-mails Enviados</h6>
+                <small class="text-muted">Comunicações realizadas</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card border-warning">
+            <div class="card-body text-center">
+                <div class="display-6 text-warning mb-2">
+                    {% for temporada in temporadas %}{% if not temporada.email_enviado %}{{ forloop.counter0|add:1 }}{% endif %}{% empty %}0{% endfor %}
+                </div>
+                <h6 class="card-title">Pendentes</h6>
+                <small class="text-muted">Aguardando envio</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card border-info">
+            <div class="card-body text-center">
+                <div class="display-6 text-info mb-2">0</div>
+                <h6 class="card-title">Monitores Ativos</h6>
+                <small class="text-muted">Participando</small>
+            </div>
+        </div>
+    </div>
+</div>
 
-    <button type="submit" class="btn btn-warning mt-3">Enviar e-mails para selecionadas</button>
-</form>
+<!-- Lista de Temporadas -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-calendar-alt me-2"></i>Gerenciamento de Temporadas
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if temporadas %}
+                    <form method="post" action="{% url 'enviar_emails_temporadas' %}">
+                        {% csrf_token %}
+                        
+                        <!-- Botões de Ação -->
+                        <div class="mb-3 d-flex gap-2 flex-wrap">
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-envelope"></i> Enviar E-mails Selecionados
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="toggleSelectAll()">
+                                <i class="fas fa-check-square"></i> Selecionar Todos
+                            </button>
+                            <button type="button" class="btn btn-outline-info" onclick="toggleEmailFilter()">
+                                <i class="fas fa-filter"></i> Filtrar Pendentes
+                            </button>
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="temporadasTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="50">
+                                            <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                                        </th>
+                                        <th>Nome da Temporada</th>
+                                        <th>Período</th>
+                                        <th>Cliente</th>
+                                        <th>Tipo</th>
+                                        <th>Status do E-mail</th>
+                                        <th>Reenvio</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for temporada in temporadas %}
+                                    <tr class="temporada-row" data-email-enviado="{{ temporada.email_enviado|yesno:'true,false' }}">
+                                        <td>
+                                            {% if not temporada.email_enviado or user.user_type == 'gestor' %}
+                                                <input type="checkbox" name="temporadas" value="{{ temporada.id }}" class="temporada-checkbox">
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div>
+                                                <strong>{{ temporada.nome }}</strong>
+                                                {% if temporada.descricao %}
+                                                    <br><small class="text-muted">{{ temporada.descricao|truncatechars:50 }}</small>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <small>
+                                                <strong>Início:</strong> {{ temporada.data_inicio|date:"d/m/Y" }}<br>
+                                                <strong>Fim:</strong> {{ temporada.data_fim|date:"d/m/Y" }}
+                                            </small>
+                                        </td>
+                                        <td>{{ temporada.cliente|default:"Não informado" }}</td>
+                                        <td>
+                                            <span class="badge bg-info">{{ temporada.get_tipo_display }}</span>
+                                        </td>
+                                        <td class="text-center">
+                                            {% if temporada.email_enviado %}
+                                                <span class="email-status text-success" title="E-mail enviado">
+                                                    <i class="fas fa-check-circle"></i>
+                                                </span>
+                                                <br><small class="text-muted">Enviado</small>
+                                            {% else %}
+                                                <span class="email-status text-warning" title="E-mail pendente">
+                                                    <i class="fas fa-clock"></i>
+                                                </span>
+                                                <br><small class="text-muted">Pendente</small>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">
+                                            {% if user.user_type == 'gestor' %}
+                                                {% if temporada.email_enviado %}
+                                                    <form method="post" action="{% url 'habilitar_reenvio_email' temporada.id %}" class="d-inline">
+                                                        {% csrf_token %}
+                                                        <button type="submit" class="btn btn-outline-warning btn-sm" 
+                                                                title="Habilitar reenvio de e-mail"
+                                                                onclick="return confirm('Deseja habilitar o reenvio de e-mail para esta temporada?')">
+                                                            <i class="fas fa-redo"></i>
+                                                        </button>
+                                                    </form>
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <a href="{% url 'interessados_por_temporada' temporada.id %}" 
+                                                   class="btn btn-outline-primary" title="Ver interessados">
+                                                    <i class="fas fa-users"></i>
+                                                </a>
+                                                <a href="{% url 'detalhes_temporada' temporada.id %}" 
+                                                   class="btn btn-outline-info" title="Ver detalhes">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                {% if user.user_type == 'gestor' %}
+                                                    <a href="{% url 'editar_temporada' temporada.id %}" 
+                                                       class="btn btn-outline-secondary" title="Editar">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </form>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-calendar-times fa-4x text-muted mb-3"></i>
+                        <h4>Nenhuma temporada cadastrada</h4>
+                        <p class="text-muted">Comece criando sua primeira temporada para gerenciar monitores.</p>
+                        <a href="{% url 'criar_temporada' %}" class="btn btn-success">
+                            <i class="fas fa-plus"></i> Criar Primeira Temporada
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Instruções -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Instruções de Uso
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-info">📧 Envio de E-mails</h6>
+                        <ul class="small">
+                            <li>Selecione as temporadas desejadas usando os checkboxes</li>
+                            <li>Clique em "Enviar E-mails Selecionados" para notificar monitores</li>
+                            <li>E-mails já enviados são marcados com ✅</li>
+                            <li>Gestores podem habilitar reenvio quando necessário</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h6 class="text-info">⚡ Ações Disponíveis</h6>
+                        <ul class="small">
+                            <li><strong>Ver interessados:</strong> Lista de monitores interessados</li>
+                            <li><strong>Ver detalhes:</strong> Informações completas da temporada</li>
+                            <li><strong>Editar:</strong> Modificar dados da temporada (apenas gestores)</li>
+                            <li><strong>Reenvio:</strong> Habilitar novo envio de e-mail (apenas gestores)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
-    function handleRowClick(event, temporadaId) {
-        // Ignora se clicou num checkbox ou dentro de um botão
-        if (event.target.tagName === 'INPUT' || event.target.tagName === 'BUTTON' || event.target.tagName === 'A') {
-            return;
-        }
-        window.location.href = '/temporadas/' + temporadaId + '/';
+    function toggleSelectAll() {
+        const selectAllCheckbox = document.getElementById('selectAll');
+        const checkboxes = document.querySelectorAll('.temporada-checkbox');
+        
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = selectAllCheckbox.checked;
+        });
     }
+    
+    function toggleEmailFilter() {
+        const rows = document.querySelectorAll('.temporada-row');
+        const button = event.target.closest('button');
+        
+        rows.forEach(row => {
+            const emailEnviado = row.dataset.emailEnviado === 'true';
+            if (button.textContent.includes('Filtrar Pendentes')) {
+                row.style.display = emailEnviado ? 'none' : '';
+            } else {
+                row.style.display = '';
+            }
+        });
+        
+        if (button.textContent.includes('Filtrar Pendentes')) {
+            button.innerHTML = '<i class="fas fa-eye"></i> Mostrar Todos';
+        } else {
+            button.innerHTML = '<i class="fas fa-filter"></i> Filtrar Pendentes';
+        }
+    }
+    
+    // Atualizar contador do selectAll quando checkboxes individuais mudam
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('temporada-checkbox')) {
+            const allCheckboxes = document.querySelectorAll('.temporada-checkbox');
+            const checkedCheckboxes = document.querySelectorAll('.temporada-checkbox:checked');
+            const selectAllCheckbox = document.getElementById('selectAll');
+            
+            selectAllCheckbox.checked = allCheckboxes.length === checkedCheckboxes.length;
+            selectAllCheckbox.indeterminate = checkedCheckboxes.length > 0 && checkedCheckboxes.length < allCheckboxes.length;
+        }
+    });
 </script>
 {% endblock %}
