@@ -29,14 +29,23 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("SECRET_KEY", "unsafe-dev-key")
 DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
-# aceita lista por env e, se a env não vier, libera os domínios do Railway
+# Aceita lista por env; se não vier nada, deixa um fallback seguro p/ Railway + local
 _ALLOWED = os.getenv("ALLOWED_HOSTS", ".up.railway.app,localhost,127.0.0.1")
 ALLOWED_HOSTS = [h.strip() for h in _ALLOWED.split(",") if h.strip()]
 
-# Inclui https://<host> para CSRF em produção
+# --- CSRF ---
+# 1) Tenta ler direto da env (FORMA MAIS SEGURA)
 _CSRF = os.getenv("CSRF_TRUSTED_ORIGINS", "")
-if _CSRF:
-    CSRF_TRUSTED_ORIGINS = [o.strip() for o in _CSRF.split(",") if o.strip()]
+CSRF_TRUSTED_ORIGINS = [o.strip() for o in _CSRF.split(",") if o.strip()]
+
+# 2) Se a env não vier, deriva dos ALLOWED_HOSTS (sem wildcard e sem hosts locais)
+if not CSRF_TRUSTED_ORIGINS:
+    CSRF_TRUSTED_ORIGINS = [
+        f"https://{h}"
+        for h in ALLOWED_HOSTS
+        if h and "." in h and not h.startswith(".") and h not in ("localhost", "127.0.0.1")
+    ]
+
 for h in ALLOWED_HOSTS:
     h = h.strip()
     if h and "." in h and not h.startswith("http"):
