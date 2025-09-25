@@ -11,6 +11,7 @@ urlpatterns = [
     path('minhas/', views.minhas_participacoes, name='minhas_participacoes'),
     path('responder/<int:interesse_id>/', views.resposta_participacao, name='resposta_participacao'),
     path('enviar_emails/', views.enviar_emails_temporadas, name='enviar_emails_temporadas'),
+    path('habilitar-reenvio-email/<int:temporada_id>/', views.habilitar_reenvio_email, name='habilitar_reenvio_email'),
     path('calendario/', views.calendario_novo_view, name='calendario'),
     path('api/temporadas/', views.api_temporadas_json, name='api_temporadas_json'),
     path('<int:temporada_id>/', views.detalhes_temporada, name='detalhes_temporada'),

@@ -2,45 +2,182 @@
 
 {% block title %}Monitores interessados na temporada: {{ temporada.nome }}{% endblock %}
 
-{% block content %}
-<table border="1">
-    <thead>
-        <tr>
-            <th>Monitor</th>
-            <th>Status atual</th>
-            <th>Ações</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for interesse in interessados %}
-        <tr>
-            <td>{{ interesse.monitor.username }}</td>
-            <td>{{ interesse.get_status_display }}</td>
-            <td>
-                {% if interesse.status == 'interessado' %}
-                <form method="post" action="{% url 'alterar_status_interesse' interesse.id %}" style="display:inline;">
-                    {% csrf_token %}
-                    <input type="hidden" name="status" value="aprovado">
-                    <button type="submit">Aprovar</button>
-                </form>
-                <form method="post" action="{% url 'alterar_status_interesse' interesse.id %}" style="display:inline;">
-                    {% csrf_token %}
-                    <input type="hidden" name="status" value="recusado">
-                    <button type="submit">Recusar</button>
-                </form>
-                {% else %}
-                    Nenhuma ação disponível
-                {% endif %}
-            </td>
-        </tr>
-        {% empty %}
-        <tr>
-            <td colspan="3">Nenhum monitor demonstrou interesse ainda.</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+    .card {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        border: 1px solid rgba(0, 0, 0, 0.125);
+        transition: transform 0.2s;
+    }
+    
+    .card:hover {
+        transform: translateY(-2px);
+    }
+    
+    .table th {
+        border-top: none;
+        font-weight: 600;
+        font-size: 0.875rem;
+        background-color: #f8f9fa;
+    }
+    
+    .badge {
+        font-size: 0.75rem;
+    }
+    
+    .btn-group .btn {
+        margin-right: 0.25rem;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: #6c757d;
+    }
+    
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+</style>
+{% endblock %}
 
-<br>
-<a href="{% url 'lista_temporadas' %}">← Voltar</a>
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-2">
+                        <i class="fas fa-users me-2"></i>Monitores Interessados
+                    </h2>
+                    <p class="text-muted mb-0">
+                        <strong>Temporada:</strong> {{ temporada.nome }}
+                        {% if temporada.data_inicio and temporada.data_fim %}
+                            | {{ temporada.data_inicio|date:"d/m/Y" }} - {{ temporada.data_fim|date:"d/m/Y" }}
+                        {% endif %}
+                    </p>
+                </div>
+                <div>
+                    <a href="{% url 'lista_temporadas' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Voltar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list me-2"></i>Lista de Interessados
+                        <span class="badge bg-primary ms-2">{{ interessados|length }}</span>
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if interessados %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th><i class="fas fa-user me-1"></i>Monitor</th>
+                                        <th><i class="fas fa-info-circle me-1"></i>Status Atual</th>
+                                        <th><i class="fas fa-cogs me-1"></i>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for interesse in interessados %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar-circle me-2">
+                                                    <i class="fas fa-user"></i>
+                                                </div>
+                                                <div>
+                                                    <strong>{{ interesse.monitor.username }}</strong>
+                                                    {% if interesse.monitor.first_name %}
+                                                        <br><small class="text-muted">{{ interesse.monitor.first_name }} {{ interesse.monitor.last_name }}</small>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if interesse.status == 'interessado' %}
+                                                <span class="badge bg-warning">
+                                                    <i class="fas fa-clock me-1"></i>{{ interesse.get_status_display }}
+                                                </span>
+                                            {% elif interesse.status == 'aprovado' %}
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-check me-1"></i>{{ interesse.get_status_display }}
+                                                </span>
+                                            {% elif interesse.status == 'recusado' %}
+                                                <span class="badge bg-danger">
+                                                    <i class="fas fa-times me-1"></i>{{ interesse.get_status_display }}
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ interesse.get_status_display }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if interesse.status == 'interessado' %}
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <form method="post" action="{% url 'alterar_status_interesse' interesse.id %}" style="display:inline;">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="status" value="aprovado">
+                                                        <button type="submit" class="btn btn-success" title="Aprovar monitor">
+                                                            <i class="fas fa-check"></i> Aprovar
+                                                        </button>
+                                                    </form>
+                                                    <form method="post" action="{% url 'alterar_status_interesse' interesse.id %}" style="display:inline;">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="status" value="recusado">
+                                                        <button type="submit" class="btn btn-danger" title="Recusar monitor">
+                                                            <i class="fas fa-times"></i> Recusar
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            {% else %}
+                                                <span class="text-muted">
+                                                    <i class="fas fa-check-circle me-1"></i>Processado
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-user-times"></i>
+                            <h4>Nenhum monitor interessado</h4>
+                            <p class="text-muted">Ainda não há monitores que demonstraram interesse nesta temporada.</p>
+                            <a href="{% url 'lista_temporadas' %}" class="btn btn-primary">
+                                <i class="fas fa-arrow-left me-1"></i>Voltar para Temporadas
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #007bff;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+}
+</style>
 {% endblock %}
