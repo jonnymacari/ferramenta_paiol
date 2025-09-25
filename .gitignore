@@ -417,3 +417,25 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# Django specific
+*.pot
+local_settings.py
+db_prod.sqlite3
+media/
+staticfiles/
+static_collected/
+
+# Environment variables
+.env.local
+.env.production
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
