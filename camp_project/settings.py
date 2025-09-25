@@ -141,8 +141,8 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATIC_ROOT = Path(__file__).resolve().parent.parent / "staticfiles"
 # Se você tiver uma pasta 'static/' no projeto, mantenha:
-from pathlib import Path
-STATICFILES_DIRS = [Path(__file__).resolve().parent.parent / "static"]
+#from pathlib import Path
+#STATICFILES_DIRS = [Path(__file__).resolve().parent.parent / "static"]
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Media files
