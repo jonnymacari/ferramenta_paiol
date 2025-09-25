@@ -429,3 +429,97 @@ def approve_monitor(request, monitor_id):
     
     return render(request, 'approve_monitor_detail.html', {'monitor': monitor})
 
+
+
+@login_required
+@user_passes_test(is_gestor)
+def temporadas_monitores_dashboard(request):
+    """Dashboard unificado de Temporadas + Monitores para gestores"""
+    from temporadas.models import Temporada, InteresseTemporada
+    from django.db.models import Count, Q
+    from datetime import datetime, timedelta
+    
+    # Estatísticas gerais
+    total_temporadas = Temporada.objects.count()
+    total_monitores = CustomUser.objects.filter(user_type='monitor').count()
+    monitores_aprovados = CustomUser.objects.filter(user_type='monitor', is_approved=True).count()
+    
+    # Temporadas ativas (que ainda não terminaram)
+    hoje = timezone.now().date()
+    temporadas_ativas = Temporada.objects.filter(data_fim__gte=hoje).count()
+    
+    # Temporadas com mais interesse
+    temporadas_populares = Temporada.objects.annotate(
+        total_interessados=Count('interessetemporada')
+    ).order_by('-total_interessados')[:5]
+    
+    # Monitores mais ativos (com mais participações)
+    monitores_ativos = CustomUser.objects.filter(
+        user_type='monitor'
+    ).annotate(
+        total_participacoes=Count('interessetemporada', filter=Q(interessetemporada__status='aprovado'))
+    ).order_by('-total_participacoes')[:10]
+    
+    # Temporadas recentes
+    temporadas_recentes = Temporada.objects.order_by('-id')[:5]
+    
+    # Interesses pendentes de aprovação
+    interesses_pendentes = InteresseTemporada.objects.filter(status='interessado').count()
+    
+    # Dados para gráficos
+    # Interesse por mês (últimos 6 meses)
+    seis_meses_atras = hoje - timedelta(days=180)
+    interesse_por_mes = []
+    
+    for i in range(6):
+        mes_inicio = seis_meses_atras + timedelta(days=30*i)
+        mes_fim = mes_inicio + timedelta(days=30)
+        
+        count = InteresseTemporada.objects.filter(
+            created_at__gte=mes_inicio,
+            created_at__lt=mes_fim
+        ).count() if hasattr(InteresseTemporada, 'created_at') else 0
+        
+        interesse_por_mes.append({
+            'mes': mes_inicio.strftime('%b/%Y'),
+            'count': count
+        })
+    
+    # Status dos monitores
+    status_monitores = {
+        'aprovados': monitores_aprovados,
+        'pendentes': total_monitores - monitores_aprovados,
+        'com_perfil_completo': CustomUser.objects.filter(
+            user_type='monitor', 
+            cadastro_completo=True
+        ).count(),
+        'perfil_incompleto': CustomUser.objects.filter(
+            user_type='monitor', 
+            cadastro_completo=False
+        ).count()
+    }
+    
+    # Temporadas por status
+    temporadas_por_status = {
+        'ativas': temporadas_ativas,
+        'finalizadas': total_temporadas - temporadas_ativas,
+        'com_email_enviado': Temporada.objects.filter(email_enviado=True).count(),
+        'sem_email_enviado': Temporada.objects.filter(email_enviado=False).count()
+    }
+    
+    context = {
+        'total_temporadas': total_temporadas,
+        'total_monitores': total_monitores,
+        'monitores_aprovados': monitores_aprovados,
+        'temporadas_ativas': temporadas_ativas,
+        'interesses_pendentes': interesses_pendentes,
+        'temporadas_populares': temporadas_populares,
+        'monitores_ativos': monitores_ativos,
+        'temporadas_recentes': temporadas_recentes,
+        'interesse_por_mes': interesse_por_mes,
+        'status_monitores': status_monitores,
+        'temporadas_por_status': temporadas_por_status,
+    }
+    
+    return render(request, 'temporadas_monitores_dashboard.html', context)
+

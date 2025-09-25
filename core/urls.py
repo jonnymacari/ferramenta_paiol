@@ -23,4 +23,7 @@ urlpatterns = [
     # Aprovação de monitores
     path('approve-monitors/', views.approve_monitors, name='approve_monitors'),
     path('approve-monitor/<int:monitor_id>/', views.approve_monitor, name='approve_monitor'),
+    
+    # Dashboard Temporadas + Monitores
+    path('temporadas-monitores-dashboard/', views.temporadas_monitores_dashboard, name='temporadas_monitores_dashboard'),
 ]

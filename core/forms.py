@@ -5,6 +5,16 @@ import csv
 import io
 
 class CustomUserCreationForm(UserCreationForm):
+    email = forms.EmailField(
+        required=True,
+        label='E-mail',
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'seu@email.com'
+        }),
+        help_text='Campo obrigatório. Digite um e-mail válido.'
+    )
+    
     cpf = forms.CharField(
         max_length=14, 
         required=True,
@@ -12,7 +22,8 @@ class CustomUserCreationForm(UserCreationForm):
         widget=forms.TextInput(attrs={
             'placeholder': '000.000.000-00',
             'class': 'form-control'
-        })
+        }),
+        help_text='Campo obrigatório. Digite seu CPF.'
     )
     
     class Meta:
@@ -25,19 +36,64 @@ class CustomUserCreationForm(UserCreationForm):
             'password2': 'Confirme a senha'
         }
         widgets = {
-            'username': forms.TextInput(attrs={'class': 'form-control'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'username': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Digite seu nome de usuário'
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'seu@email.com'
+            }),
+        }
+        help_texts = {
+            'username': 'Campo obrigatório. Apenas letras, números e os caracteres @/./+/-/_ são permitidos.',
+            'password1': 'Sua senha deve conter pelo menos 8 caracteres e não pode ser muito comum.',
+            'password2': 'Digite a mesma senha novamente para confirmação.',
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['password1'].widget.attrs.update({'class': 'form-control'})
-        self.fields['password2'].widget.attrs.update({'class': 'form-control'})
+        self.fields['password1'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': 'Digite sua senha'
+        })
+        self.fields['password2'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': 'Confirme sua senha'
+        })
+        
+        # Traduzir mensagens de erro para português
+        self.fields['password1'].help_text = 'Sua senha deve conter pelo menos 8 caracteres e não pode ser muito comum.'
+        self.fields['password2'].help_text = 'Digite a mesma senha novamente para confirmação.'
+        self.fields['username'].help_text = 'Campo obrigatório. Apenas letras, números e os caracteres @/./+/-/_ são permitidos.'
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if not email:
+            raise forms.ValidationError('O e-mail é obrigatório.')
+        
+        # Verificar se o email já existe
+        if CustomUser.objects.filter(email=email).exists():
+            raise forms.ValidationError('Este e-mail já está cadastrado no sistema.')
+        
+        return email
+
+    def clean_cpf(self):
+        cpf = self.cleaned_data.get('cpf')
+        if not cpf:
+            raise forms.ValidationError('O CPF é obrigatório.')
+        
+        # Verificar se o CPF já existe
+        if CustomUser.objects.filter(cpf=cpf).exists():
+            raise forms.ValidationError('Este CPF já está cadastrado no sistema.')
+        
+        return cpf
 
     def save(self, commit=True):
         user = super().save(commit=False)
         user.user_type = 'monitor'  # Define automaticamente como monitor
         user.cpf = self.cleaned_data['cpf']
+        user.email = self.cleaned_data['email']
         if commit:
             user.save()
         return user
@@ -57,19 +113,55 @@ class CompleteProfileForm(forms.ModelForm):
             'data_nascimento': 'Data de Nascimento'
         }
         widgets = {
-            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'telefone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '(11) 99999-9999'}),
-            'endereco': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'data_nascimento': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'first_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Digite seu nome'
+            }),
+            'last_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Digite seu sobrenome'
+            }),
+            'telefone': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'placeholder': '(11) 99999-9999'
+            }),
+            'endereco': forms.Textarea(attrs={
+                'class': 'form-control', 
+                'rows': 3,
+                'placeholder': 'Digite seu endereço completo'
+            }),
+            'data_nascimento': forms.DateInput(attrs={
+                'class': 'form-control', 
+                'type': 'date'
+            }),
+        }
+        help_texts = {
+            'first_name': 'Digite seu primeiro nome.',
+            'last_name': 'Digite seu sobrenome ou nome completo.',
+            'telefone': 'Digite seu telefone com DDD.',
+            'endereco': 'Digite seu endereço completo com CEP.',
+            'data_nascimento': 'Selecione sua data de nascimento.',
         }
 
 
 class UserManagementForm(forms.ModelForm):
     """Formulário para gestores criarem/editarem usuários"""
     
+    email = forms.EmailField(
+        required=True,
+        label='E-mail',
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'usuario@email.com'
+        }),
+        help_text='Campo obrigatório. Digite um e-mail válido.'
+    )
+    
     password = forms.CharField(
-        widget=forms.PasswordInput(attrs={'class': 'form-control'}),
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Digite a senha'
+        }),
         required=False,
         label='Senha',
         help_text='Deixe em branco para manter a senha atual (apenas na edição)'
@@ -93,15 +185,49 @@ class UserManagementForm(forms.ModelForm):
             'data_nascimento': 'Data de Nascimento'
         }
         widgets = {
-            'username': forms.TextInput(attrs={'class': 'form-control'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control'}),
-            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'username': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Digite o nome de usuário'
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'usuario@email.com'
+            }),
+            'first_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Digite o nome'
+            }),
+            'last_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Digite o sobrenome'
+            }),
             'user_type': forms.Select(attrs={'class': 'form-control'}),
-            'cpf': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '000.000.000-00'}),
-            'telefone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '(11) 99999-9999'}),
-            'endereco': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'data_nascimento': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'cpf': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'placeholder': '000.000.000-00'
+            }),
+            'telefone': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'placeholder': '(11) 99999-9999'
+            }),
+            'endereco': forms.Textarea(attrs={
+                'class': 'form-control', 
+                'rows': 3,
+                'placeholder': 'Digite o endereço completo'
+            }),
+            'data_nascimento': forms.DateInput(attrs={
+                'class': 'form-control', 
+                'type': 'date'
+            }),
+        }
+        help_texts = {
+            'username': 'Campo obrigatório. Apenas letras, números e os caracteres @/./+/-/_ são permitidos.',
+            'email': 'Campo obrigatório. Digite um e-mail válido.',
+            'user_type': 'Selecione o tipo de usuário no sistema.',
+            'cpf': 'Digite o CPF do usuário (apenas para monitores).',
+            'telefone': 'Digite o telefone com DDD.',
+            'endereco': 'Digite o endereço completo.',
+            'data_nascimento': 'Selecione a data de nascimento.',
         }
 
     def __init__(self, *args, **kwargs):
@@ -113,7 +239,19 @@ class UserManagementForm(forms.ModelForm):
             self.fields['password'].required = False
         else:
             self.fields['password'].required = True
-            self.fields['password'].help_text = 'Digite uma senha para o usuário'
+            self.fields['password'].help_text = 'Campo obrigatório. Digite uma senha para o usuário'
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if not email:
+            raise forms.ValidationError('O e-mail é obrigatório.')
+        
+        # Verificar se o email já existe (exceto para o próprio usuário na edição)
+        existing_user = CustomUser.objects.filter(email=email).first()
+        if existing_user and (not self.instance or existing_user.id != self.instance.id):
+            raise forms.ValidationError('Este e-mail já está cadastrado no sistema.')
+        
+        return email
 
     def save(self, commit=True):
         user = super().save(commit=False)
@@ -136,7 +274,7 @@ class CSVUploadForm(forms.Form):
             'class': 'form-control',
             'accept': '.csv'
         }),
-        help_text='Formato: username,email,first_name,last_name,user_type,cpf,telefone,password'
+        help_text='Formato obrigatório: username,email,first_name,last_name,user_type,cpf,telefone,password'
     )
     
     def clean_csv_file(self):
@@ -151,7 +289,7 @@ class CSVUploadForm(forms.Form):
         
         # Verificar se o arquivo não é muito grande (5MB)
         if csv_file.size > 5 * 1024 * 1024:
-            raise forms.ValidationError('O arquivo é muito grande. Máximo 5MB.')
+            raise forms.ValidationError('O arquivo é muito grande. Tamanho máximo: 5MB.')
         
         return csv_file
     
