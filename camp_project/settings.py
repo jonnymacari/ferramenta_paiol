@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+import dj_database_url
+
 
 # Load environment variables
 load_dotenv()
@@ -24,15 +26,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-uu5)f)g5k%b^0$&x4*@re89-6=5s+7-xt70b27ipa@y_fq9m$o')
+SECRET_KEY = os.getenv("SECRET_KEY", "unsafe-dev-key")
+DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
+# Hosts/CSRF para produção (Railway)
+ALLOWED_HOSTS = [h.strip() for h in os.getenv("ALLOWED_HOSTS", ".railway.app,localhost,127.0.0.1").split(",")]
 
-ALLOWED_HOSTS = ['8003-ixjg2tdyii7lz20mept0f-0571bf9a.manus.computer', '8001-ixjg2tdyii7lz20mept0f-0571bf9a.manus.computer', '8000-ixjg2tdyii7lz20mept0f-0571bf9a.manus.computer', 'localhost', '127.0.0.1']
-
-CSRF_TRUSTED_ORIGINS = ['https://8003-ixjg2tdyii7lz20mept0f-0571bf9a.manus.computer', 'https://8001-ixjg2tdyii7lz20mept0f-0571bf9a.manus.computer', 'https://8000-ixjg2tdyii7lz20mept0f-0571bf9a.manus.computer']
+# Inclui https://<host> para CSRF em produção
+CSRF_TRUSTED_ORIGINS = []
+for h in ALLOWED_HOSTS:
+    h = h.strip()
+    if h and "." in h and not h.startswith("http"):
+        CSRF_TRUSTED_ORIGINS.append(f"https://{h}")
 
 
 # Application definition
@@ -57,6 +62,7 @@ LOGOUT_REDIRECT_URL = '/login/'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',  # Para servir arquivos estáticos
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -91,10 +97,10 @@ WSGI_APPLICATION = 'camp_project.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    "default": dj_database_url.config(
+        default=f"sqlite:///{Path(__file__).resolve().parent.parent / 'db.sqlite3'}",
+        conn_max_age=600,
+    )
 }
 
 
@@ -132,13 +138,12 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-
-# Configuração para desenvolvimento
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),
-] if os.path.exists(os.path.join(BASE_DIR, 'static')) else []
+STATIC_URL = "/static/"
+STATIC_ROOT = Path(__file__).resolve().parent.parent / "staticfiles"
+# Se você tiver uma pasta 'static/' no projeto, mantenha:
+from pathlib import Path
+STATICFILES_DIRS = [Path(__file__).resolve().parent.parent / "static"]
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Media files
 MEDIA_URL = '/media/'
@@ -161,3 +166,5 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'jpimacari12@gmail.com'  # substitua pelo seu email
 EMAIL_HOST_PASSWORD = 'srpr eeew jpdg atfk'  # use senha de app (não a senha normal)
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")

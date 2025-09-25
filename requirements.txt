@@ -161,3 +161,9 @@ youtube-search==2.1.2
 yt-dlp==2024.8.1
 zope.event==5.0
 zope.interface==6.4
+Django>=4.2,<6
+gunicorn
+whitenoise
+dj-database-url
+psycopg[binary]
+python-dotenv
