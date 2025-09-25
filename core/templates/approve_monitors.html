@@ -18,6 +18,19 @@
         font-weight: 600;
         font-size: 0.875rem;
     }
+    
+    .btn-loading {
+        position: relative;
+    }
+    
+    .btn-loading:disabled {
+        opacity: 0.6;
+    }
+    
+    .spinner-border-sm {
+        width: 1rem;
+        height: 1rem;
+    }
 </style>
 {% endblock %}
 
@@ -89,6 +102,7 @@
                                     <th>CPF</th>
                                     <th>Data de Cadastro</th>
                                     <th>Status do Cadastro</th>
+                                    <th>Status de Aprovação</th>
                                     <th>Ações</th>
                                 </tr>
                             </thead>
@@ -118,30 +132,43 @@
                                         {% endif %}
                                     </td>
                                     <td>
+                                        {% if monitor.is_approved %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check"></i> Aprovado
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-warning">
+                                                <i class="fas fa-clock"></i> Pendente
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
                                         <div class="btn-group btn-group-sm" role="group">
                                             <a href="{% url 'user_detail' monitor.id %}" 
                                                class="btn btn-outline-info" title="Ver detalhes">
                                                 <i class="fas fa-eye"></i>
                                             </a>
                                             
-                                            {% if monitor.is_active %}
+                                            {% if monitor.is_approved %}
+                                                <!-- Monitor já aprovado - botão para remover aprovação -->
                                                 <form method="post" action="{% url 'approve_monitor' monitor.id %}" class="d-inline">
                                                     {% csrf_token %}
-                                                    <input type="hidden" name="action" value="reject">
-                                                    <button type="submit" class="btn btn-outline-warning" 
-                                                            title="Suspender" 
-                                                            onclick="return confirm('Tem certeza que deseja suspender este monitor?')">
-                                                        <i class="fas fa-pause"></i>
+                                                    <input type="hidden" name="action" value="disapprove">
+                                                    <button type="submit" class="btn btn-warning" 
+                                                            title="Remover Aprovação" 
+                                                            onclick="return confirm('Tem certeza que deseja remover a aprovação deste monitor? Ele perderá acesso às temporadas.')">
+                                                        <i class="fas fa-times"></i> Desaprovar
                                                     </button>
                                                 </form>
                                             {% else %}
+                                                <!-- Monitor não aprovado - botão para aprovar -->
                                                 <form method="post" action="{% url 'approve_monitor' monitor.id %}" class="d-inline">
                                                     {% csrf_token %}
                                                     <input type="hidden" name="action" value="approve">
-                                                    <button type="submit" class="btn btn-outline-success" 
-                                                            title="Aprovar" 
-                                                            onclick="return confirm('Tem certeza que deseja aprovar este monitor?')">
-                                                        <i class="fas fa-check"></i>
+                                                    <button type="submit" class="btn btn-success" 
+                                                            title="Aprovar Monitor" 
+                                                            onclick="return confirm('Tem certeza que deseja aprovar este monitor? Ele terá acesso às temporadas.')">
+                                                        <i class="fas fa-check"></i> Aprovar
                                                     </button>
                                                 </form>
                                             {% endif %}
@@ -207,5 +234,75 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Adicionar funcionalidade AJAX aos botões de aprovação
+    const approvalForms = document.querySelectorAll('form[action*="approve_monitor"]');
+    
+    approvalForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const button = form.querySelector('button[type="submit"]');
+            const originalText = button.innerHTML;
+            const action = form.querySelector('input[name="action"]').value;
+            
+            // Mostrar loading
+            button.disabled = true;
+            button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processando...';
+            
+            // Fazer requisição AJAX
+            fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Recarregar a página para mostrar as mudanças
+                    window.location.reload();
+                } else {
+                    throw new Error('Erro na requisição');
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                // Restaurar botão em caso de erro
+                button.disabled = false;
+                button.innerHTML = originalText;
+                alert('Erro ao processar a solicitação. Tente novamente.');
+            });
+        });
+    });
+    
+    // Adicionar confirmação personalizada
+    window.confirmApproval = function(action, username) {
+        let message = '';
+        let icon = '';
+        
+        switch(action) {
+            case 'approve':
+                message = `Tem certeza que deseja APROVAR o monitor "${username}"?\n\nEle terá acesso às temporadas e receberá emails.`;
+                icon = '✅';
+                break;
+            case 'disapprove':
+                message = `Tem certeza que deseja REMOVER A APROVAÇÃO do monitor "${username}"?\n\nEle perderá acesso às temporadas até nova aprovação.`;
+                icon = '⚠️';
+                break;
+            case 'reject':
+                message = `Tem certeza que deseja REJEITAR o monitor "${username}"?\n\nEle será desativado completamente.`;
+                icon = '❌';
+                break;
+        }
+        
+        return confirm(icon + ' ' + message);
+    };
+});
+</script>
 {% endblock %}
 
