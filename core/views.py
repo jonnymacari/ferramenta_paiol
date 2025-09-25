@@ -407,25 +407,38 @@ def approve_monitors(request):
 @login_required
 @user_passes_test(is_gestor)
 def approve_monitor(request, monitor_id):
-    """Aprovar um monitor específico"""
+    """Controlar aprovação de monitores - aprovar ou desaprovar"""
     monitor = get_object_or_404(CustomUser, id=monitor_id, user_type='monitor')
     
     if request.method == 'POST':
         action = request.POST.get('action')
         
         if action == 'approve':
-            # Marcar como aprovado (pode ser implementado com um campo específico)
-            monitor.is_active = True
+            # Aprovar monitor
+            monitor.is_approved = True
+            monitor.is_active = True  # Garantir que está ativo também
             monitor.save()
-            messages.success(request, f'Monitor "{monitor.username}" aprovado com sucesso!')
+            messages.success(request, f'✅ Monitor "{monitor.username}" aprovado com sucesso! Agora pode acessar temporadas e receber emails.')
+        
+        elif action == 'disapprove':
+            # Remover aprovação do monitor
+            monitor.is_approved = False
+            monitor.save()
+            messages.warning(request, f'⚠️ Aprovação do monitor "{monitor.username}" foi removida. Ele não poderá mais acessar temporadas até nova aprovação.')
         
         elif action == 'reject':
-            # Rejeitar monitor (desativar ou deletar)
+            # Rejeitar monitor (desativar completamente)
             monitor.is_active = False
+            monitor.is_approved = False
             monitor.save()
-            messages.warning(request, f'Monitor "{monitor.username}" foi rejeitado.')
+            messages.error(request, f'❌ Monitor "{monitor.username}" foi rejeitado e desativado.')
         
-        return redirect('approve_monitors')
+        # Redirecionar para a página de onde veio
+        next_url = request.POST.get('next', 'approve_monitors')
+        if next_url == 'manage_users':
+            return redirect('manage_users')
+        else:
+            return redirect('approve_monitors')
     
     return render(request, 'approve_monitor_detail.html', {'monitor': monitor})
 

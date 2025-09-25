@@ -21,6 +21,9 @@ class CustomUser(AbstractUser):
     # Status do cadastro para monitores
     cadastro_completo = models.BooleanField(default=False, verbose_name='Cadastro Completo')
     
+    # Status de aprovação para monitores
+    is_approved = models.BooleanField(default=False, verbose_name='Aprovado')
+    
     def __str__(self):
         return f"{self.username} ({self.get_user_type_display()})"
     
@@ -34,8 +37,16 @@ class CustomUser(AbstractUser):
                 self.endereco and 
                 self.data_nascimento
             )
+            
+            # Monitores criados por gestores/admins são aprovados automaticamente
+            # Monitores que se auto-cadastram precisam de aprovação manual
+            if not self.pk:  # Novo usuário
+                # Se não foi definido explicitamente, assumir que precisa aprovação
+                if not hasattr(self, '_created_by_manager'):
+                    self.is_approved = False
         else:
-            # Para outros tipos de usuário, considerar sempre completo
+            # Para outros tipos de usuário, considerar sempre completo e aprovado
             self.cadastro_completo = True
+            self.is_approved = True
         
         super().save(*args, **kwargs)

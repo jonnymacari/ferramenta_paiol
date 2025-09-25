@@ -56,6 +56,7 @@
                             <th>Tipo</th>
                             <th>Cadastro</th>
                             <th>Status</th>
+                            <th>Aprovação</th>
                             <th>Ações</th>
                         </tr>
                     </thead>
@@ -94,11 +95,53 @@
                                 {% endif %}
                             </td>
                             <td>
+                                {% if user_obj.user_type == 'monitor' %}
+                                    {% if user_obj.is_approved %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check"></i> Aprovado
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-warning">
+                                            <i class="fas fa-clock"></i> Pendente
+                                        </span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="badge bg-info">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
                                 <div class="btn-group btn-group-sm" role="group">
                                     <a href="{% url 'user_detail' user_obj.id %}" 
                                        class="btn btn-outline-info" title="Ver detalhes">
                                         <i class="fas fa-eye"></i>
                                     </a>
+                                    
+                                    {% if user_obj.user_type == 'monitor' %}
+                                        {% if user_obj.is_approved %}
+                                            <!-- Botão para Desaprovar -->
+                                            <form method="post" action="{% url 'approve_monitor' user_obj.id %}" style="display: inline;" 
+                                                  onsubmit="return confirmApproval('disapprove', '{{ user_obj.username }}')">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="action" value="disapprove">
+                                                <input type="hidden" name="next" value="manage_users">
+                                                <button type="submit" class="btn btn-warning btn-sm" title="Remover Aprovação">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </form>
+                                        {% else %}
+                                            <!-- Botão para Aprovar -->
+                                            <form method="post" action="{% url 'approve_monitor' user_obj.id %}" style="display: inline;"
+                                                  onsubmit="return confirmApproval('approve', '{{ user_obj.username }}')">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="action" value="approve">
+                                                <input type="hidden" name="next" value="manage_users">
+                                                <button type="submit" class="btn btn-success btn-sm" title="Aprovar Monitor">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    {% endif %}
+                                    
                                     <a href="{% url 'edit_user' user_obj.id %}" 
                                        class="btn btn-outline-primary" title="Editar">
                                         <i class="fas fa-edit"></i>
@@ -160,5 +203,27 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmApproval(action, username) {
+    let message = '';
+    let icon = '';
+    
+    switch(action) {
+        case 'approve':
+            message = `Tem certeza que deseja APROVAR o monitor "${username}"?\n\nEle terá acesso às temporadas e receberá emails.`;
+            icon = '✅';
+            break;
+        case 'disapprove':
+            message = `Tem certeza que deseja REMOVER A APROVAÇÃO do monitor "${username}"?\n\nEle perderá acesso às temporadas até nova aprovação.`;
+            icon = '⚠️';
+            break;
+    }
+    
+    return confirm(icon + ' ' + message);
+}
+</script>
 {% endblock %}
 
