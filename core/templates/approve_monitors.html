@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+{% block title %}Aprovar Monitores{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+    .card {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        border: 1px solid rgba(0, 0, 0, 0.125);
+    }
+    
+    .badge {
+        font-size: 0.75rem;
+    }
+    
+    .table th {
+        border-top: none;
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="mb-2">👥 Aprovar Monitores</h2>
+                <p class="text-muted">Gerencie as solicitações de monitores pendentes</p>
+            </div>
+            <a href="{% url 'home' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar ao Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Estatísticas -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card border-warning">
+            <div class="card-body text-center">
+                <div class="display-6 text-warning mb-2">{{ monitores_pendentes.count }}</div>
+                <h6 class="card-title">Monitores Pendentes</h6>
+                <small class="text-muted">Aguardando aprovação</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card border-success">
+            <div class="card-body text-center">
+                <div class="display-6 text-success mb-2">0</div>
+                <h6 class="card-title">Aprovados Hoje</h6>
+                <small class="text-muted">Monitores aprovados</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card border-info">
+            <div class="card-body text-center">
+                <div class="display-6 text-info mb-2">0</div>
+                <h6 class="card-title">Em Análise</h6>
+                <small class="text-muted">Aguardando documentos</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de Monitores Pendentes -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-clock me-2"></i>Monitores Pendentes de Aprovação
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if monitores_pendentes %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Monitor</th>
+                                    <th>E-mail</th>
+                                    <th>CPF</th>
+                                    <th>Data de Cadastro</th>
+                                    <th>Status do Cadastro</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for monitor in monitores_pendentes %}
+                                <tr>
+                                    <td>
+                                        <div>
+                                            <strong>{{ monitor.username }}</strong>
+                                            {% if monitor.first_name %}
+                                                <br><small class="text-muted">{{ monitor.first_name }} {{ monitor.last_name }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>{{ monitor.email|default:"Não informado" }}</td>
+                                    <td>{{ monitor.cpf|default:"Não informado" }}</td>
+                                    <td>{{ monitor.date_joined|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        {% if monitor.cadastro_completo %}
+                                            <span class="badge bg-success">Completo</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">Incompleto</span>
+                                        {% endif %}
+                                        
+                                        {% if not monitor.is_active %}
+                                            <span class="badge bg-danger">Inativo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="{% url 'user_detail' monitor.id %}" 
+                                               class="btn btn-outline-info" title="Ver detalhes">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            
+                                            {% if monitor.is_active %}
+                                                <form method="post" action="{% url 'approve_monitor' monitor.id %}" class="d-inline">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="action" value="reject">
+                                                    <button type="submit" class="btn btn-outline-warning" 
+                                                            title="Suspender" 
+                                                            onclick="return confirm('Tem certeza que deseja suspender este monitor?')">
+                                                        <i class="fas fa-pause"></i>
+                                                    </button>
+                                                </form>
+                                            {% else %}
+                                                <form method="post" action="{% url 'approve_monitor' monitor.id %}" class="d-inline">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="action" value="approve">
+                                                    <button type="submit" class="btn btn-outline-success" 
+                                                            title="Aprovar" 
+                                                            onclick="return confirm('Tem certeza que deseja aprovar este monitor?')">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                </form>
+                                            {% endif %}
+                                            
+                                            <a href="{% url 'edit_user' monitor.id %}" 
+                                               class="btn btn-outline-primary" title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                        <h4>Nenhum monitor pendente!</h4>
+                        <p class="text-muted">Todos os monitores foram processados ou não há solicitações pendentes.</p>
+                        <a href="{% url 'manage_users' %}" class="btn btn-primary">
+                            <i class="fas fa-users"></i> Gerenciar Usuários
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Instruções -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Instruções para Aprovação
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-info">📋 Critérios de Aprovação</h6>
+                        <ul class="small">
+                            <li>Cadastro completo com todas as informações</li>
+                            <li>CPF válido e único no sistema</li>
+                            <li>E-mail válido e ativo</li>
+                            <li>Dados pessoais consistentes</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h6 class="text-info">⚡ Ações Disponíveis</h6>
+                        <ul class="small">
+                            <li><strong>Ver detalhes:</strong> Visualizar informações completas</li>
+                            <li><strong>Aprovar:</strong> Ativar monitor no sistema</li>
+                            <li><strong>Suspender:</strong> Desativar temporariamente</li>
+                            <li><strong>Editar:</strong> Corrigir informações se necessário</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -103,7 +103,7 @@
                                        class="btn btn-outline-primary" title="Editar">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    {% if user_obj != user %}
+                                    {% if user_obj != user and user_obj.user_type != 'admin' %}
                                         <a href="{% url 'delete_user' user_obj.id %}" 
                                            class="btn btn-outline-danger" title="Deletar">
                                             <i class="fas fa-trash"></i>

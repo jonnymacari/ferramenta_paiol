@@ -98,6 +98,8 @@
         {% if user.user_type == 'gestor' %}
             <a href="{% url 'lista_temporadas' %}">📋 Temporadas</a>
             <a href="{% url 'calendario' %}">🗓️ Calendário</a>
+            <a href="{% url 'manage_users' %}">👥 Gerenciar Usuários</a>
+            <a href="{% url 'bi_dashboard' %}">📊 Dashboard BI</a>
 
         {% elif user.user_type == 'monitor' %}
             <a href="{% url 'listar_temporadas_monitor' %}">📬 Temporadas Disponíveis</a>

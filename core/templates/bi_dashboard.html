@@ -1,0 +1,330 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard BI{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="mb-4">📊 Dashboard de Business Intelligence</h2>
+        <p class="text-muted">Análise de performance e métricas dos monitores</p>
+    </div>
+</div>
+
+<!-- Cards de Métricas Principais -->
+<div class="row g-4 mb-5">
+    <div class="col-md-3">
+        <div class="card border-primary">
+            <div class="card-body text-center">
+                <div class="display-4 text-primary mb-2">{{ total_monitores }}</div>
+                <h6 class="card-title">Total de Monitores</h6>
+                <small class="text-muted">Cadastrados no sistema</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card border-success">
+            <div class="card-body text-center">
+                <div class="display-4 text-success mb-2">{{ monitores_ativos }}</div>
+                <h6 class="card-title">Monitores Ativos</h6>
+                <small class="text-muted">Login nos últimos 30 dias</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card border-info">
+            <div class="card-body text-center">
+                <div class="display-4 text-info mb-2">{{ taxa_completude }}%</div>
+                <h6 class="card-title">Taxa de Completude</h6>
+                <small class="text-muted">Cadastros completos</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card border-warning">
+            <div class="card-body text-center">
+                <div class="display-4 text-warning mb-2">{{ monitores_incompletos }}</div>
+                <h6 class="card-title">Cadastros Pendentes</h6>
+                <small class="text-muted">Precisam completar perfil</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gráficos e Análises -->
+<div class="row g-4 mb-5">
+    <!-- Gráfico de Cadastros por Mês -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">📈 Cadastros por Mês</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="cadastrosPorMesChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Gráfico de Status de Cadastro -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">📊 Status dos Cadastros</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="statusCadastroChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-5">
+    <!-- Ranking de Monitores -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">🏆 Top 10 Monitores</h5>
+                <small class="text-muted">Ranking por participações</small>
+            </div>
+            <div class="card-body">
+                {% if ranking_monitores %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Posição</th>
+                                    <th>Monitor</th>
+                                    <th>Participações</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for monitor in ranking_monitores %}
+                                <tr>
+                                    <td>
+                                        {% if forloop.counter <= 3 %}
+                                            <span class="badge bg-warning">{{ forloop.counter }}º</span>
+                                        {% else %}
+                                            {{ forloop.counter }}º
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <strong>{{ monitor.first_name|default:monitor.username }}</strong>
+                                        <br><small class="text-muted">{{ monitor.email }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ monitor.participacoes }}</span>
+                                    </td>
+                                    <td>
+                                        {% if monitor.cadastro_completo %}
+                                            <span class="badge bg-success">Completo</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">Pendente</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-users fa-3x mb-3"></i>
+                        <p>Nenhum monitor cadastrado ainda</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Monitores por Região -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">🗺️ Distribuição por Região</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="monitoresPorRegiaoChart" width="400" height="200"></canvas>
+                
+                <div class="mt-3">
+                    {% for regiao in monitores_por_regiao %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>{{ regiao.regiao }}</span>
+                        <span class="badge bg-secondary">{{ regiao.count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Insights e Recomendações -->
+<div class="row g-4">
+    <div class="col-12">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">💡 Insights e Recomendações</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6 class="text-info">📋 Cadastros Incompletos</h6>
+                        {% if monitores_incompletos > 0 %}
+                            <p class="small">
+                                Há {{ monitores_incompletos }} monitor{{ monitores_incompletos|pluralize:"es" }} 
+                                com cadastro incompleto. Considere enviar lembretes para completarem o perfil.
+                            </p>
+                        {% else %}
+                            <p class="small text-success">
+                                ✅ Todos os monitores têm cadastro completo!
+                            </p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <h6 class="text-info">📊 Engajamento</h6>
+                        {% if monitores_ativos < total_monitores %}
+                            <p class="small">
+                                {{ total_monitores|add:"-"|add:monitores_ativos }} monitor{{ total_monitores|add:"-"|add:monitores_ativos|pluralize:"es" }} 
+                                não fizeram login recentemente. Considere estratégias de reengajamento.
+                            </p>
+                        {% else %}
+                            <p class="small text-success">
+                                ✅ Todos os monitores estão ativos!
+                            </p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <h6 class="text-info">🎯 Próximos Passos</h6>
+                        <ul class="small mb-0">
+                            <li>Implementar sistema de notificações</li>
+                            <li>Criar programa de incentivos</li>
+                            <li>Desenvolver métricas de performance</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+    .card {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        border: 1px solid rgba(0, 0, 0, 0.125);
+    }
+    
+    .display-4 {
+        font-weight: 700;
+    }
+    
+    .table th {
+        border-top: none;
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+    
+    .badge {
+        font-size: 0.75rem;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Gráfico de Cadastros por Mês
+    const ctxCadastros = document.getElementById('cadastrosPorMesChart').getContext('2d');
+    new Chart(ctxCadastros, {
+        type: 'line',
+        data: {
+            labels: [{% for item in cadastros_por_mes %}'{{ item.mes }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+            datasets: [{
+                label: 'Cadastros',
+                data: [{% for item in cadastros_por_mes %}{{ item.count }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Gráfico de Status de Cadastro
+    const ctxStatus = document.getElementById('statusCadastroChart').getContext('2d');
+    new Chart(ctxStatus, {
+        type: 'doughnut',
+        data: {
+            labels: ['Completos', 'Incompletos'],
+            datasets: [{
+                data: [{{ monitores_completos }}, {{ monitores_incompletos }}],
+                backgroundColor: [
+                    'rgba(40, 167, 69, 0.8)',
+                    'rgba(255, 193, 7, 0.8)'
+                ],
+                borderColor: [
+                    'rgba(40, 167, 69, 1)',
+                    'rgba(255, 193, 7, 1)'
+                ],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    // Gráfico de Monitores por Região
+    const ctxRegiao = document.getElementById('monitoresPorRegiaoChart').getContext('2d');
+    new Chart(ctxRegiao, {
+        type: 'bar',
+        data: {
+            labels: [{% for item in monitores_por_regiao %}'{{ item.regiao }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+            datasets: [{
+                label: 'Monitores',
+                data: [{% for item in monitores_por_regiao %}{{ item.count }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
+
