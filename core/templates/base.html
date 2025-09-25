@@ -100,7 +100,6 @@
             <a href="{% url 'calendario' %}">🗓️ Calendário</a>
             <a href="{% url 'manage_users' %}">👥 Gerenciar Usuários</a>
             <a href="{% url 'bi_dashboard' %}">📊 Dashboard BI</a>
-            <a href="{% url 'temporadas_monitores_dashboard' %}">📈 Temporadas + Monitores</a>
 
         {% elif user.user_type == 'monitor' %}
             <a href="{% url 'listar_temporadas_monitor' %}">📬 Temporadas Disponíveis</a>
