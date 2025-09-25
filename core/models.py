@@ -31,8 +31,8 @@ class Endereco(models.Model):
 class CustomUser(AbstractUser):
     user_type = models.CharField(max_length=10, choices=USER_TYPES, default='monitor')
     
-    # Campos básicos obrigatórios para todos
-    cpf = models.CharField(max_length=11, unique=True, verbose_name='CPF')
+    # CPF será preenchido posteriormente no perfil
+    cpf = models.CharField(max_length=11, unique=True, blank=True, null=True, verbose_name='CPF')
     
     # Campos que podem ficar pendentes para monitores (informações básicas)
     first_name = models.CharField(max_length=150, blank=True, verbose_name='Nome')
