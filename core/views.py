@@ -241,6 +241,11 @@ def delete_user(request, user_id):
         messages.error(request, 'Você não pode deletar sua própria conta!')
         return redirect('manage_users')
     
+    # Não permitir deletar usuários admin
+    if user.user_type == 'admin':
+        messages.error(request, 'Não é possível deletar usuários administradores!')
+        return redirect('manage_users')
+    
     if request.method == 'POST':
         username = user.username
         user.delete()
@@ -308,4 +313,119 @@ def user_detail(request, user_id):
     }
     
     return render(request, 'user_detail.html', context)
+
+
+
+@login_required
+@user_passes_test(is_gestor)
+def bi_dashboard(request):
+    """Dashboard de BI com métricas e performance dos monitores"""
+    from django.db.models import Count, Q
+    from datetime import datetime, timedelta
+    
+    # Estatísticas gerais
+    total_monitores = CustomUser.objects.filter(user_type='monitor').count()
+    monitores_ativos = CustomUser.objects.filter(
+        user_type='monitor', 
+        last_login__gte=datetime.now() - timedelta(days=30)
+    ).count()
+    
+    # Monitores com cadastro completo vs incompleto
+    monitores_completos = CustomUser.objects.filter(
+        user_type='monitor', 
+        cadastro_completo=True
+    ).count()
+    monitores_incompletos = total_monitores - monitores_completos
+    
+    # Ranking de monitores por participações (simulado - será implementado quando houver temporadas)
+    ranking_monitores = CustomUser.objects.filter(user_type='monitor').annotate(
+        participacoes=Count('id')  # Placeholder - será substituído por participações reais
+    ).order_by('-participacoes')[:10]
+    
+    # Estatísticas de cadastro por mês (últimos 6 meses)
+    cadastros_por_mes = []
+    for i in range(6):
+        data_inicio = datetime.now().replace(day=1) - timedelta(days=30*i)
+        data_fim = data_inicio.replace(day=28) + timedelta(days=4)
+        data_fim = data_fim - timedelta(days=data_fim.day)
+        
+        count = CustomUser.objects.filter(
+            user_type='monitor',
+            date_joined__gte=data_inicio,
+            date_joined__lte=data_fim
+        ).count()
+        
+        cadastros_por_mes.append({
+            'mes': data_inicio.strftime('%b/%Y'),
+            'count': count
+        })
+    
+    cadastros_por_mes.reverse()
+    
+    # Monitores por região (baseado no endereço - simulado)
+    monitores_por_regiao = [
+        {'regiao': 'São Paulo', 'count': total_monitores // 3},
+        {'regiao': 'Rio de Janeiro', 'count': total_monitores // 4},
+        {'regiao': 'Minas Gerais', 'count': total_monitores // 5},
+        {'regiao': 'Outros', 'count': total_monitores - (total_monitores // 3 + total_monitores // 4 + total_monitores // 5)},
+    ]
+    
+    # Taxa de completude de cadastro
+    taxa_completude = (monitores_completos / total_monitores * 100) if total_monitores > 0 else 0
+    
+    context = {
+        'total_monitores': total_monitores,
+        'monitores_ativos': monitores_ativos,
+        'monitores_completos': monitores_completos,
+        'monitores_incompletos': monitores_incompletos,
+        'taxa_completude': round(taxa_completude, 1),
+        'ranking_monitores': ranking_monitores,
+        'cadastros_por_mes': cadastros_por_mes,
+        'monitores_por_regiao': monitores_por_regiao,
+    }
+    
+    return render(request, 'bi_dashboard.html', context)
+
+
+@login_required
+@user_passes_test(is_gestor)
+def approve_monitors(request):
+    """Página para aprovar monitores pendentes"""
+    # Por enquanto, vamos mostrar todos os monitores com cadastro incompleto
+    monitores_pendentes = CustomUser.objects.filter(
+        user_type='monitor',
+        cadastro_completo=False
+    ).order_by('-date_joined')
+    
+    context = {
+        'monitores_pendentes': monitores_pendentes,
+    }
+    
+    return render(request, 'approve_monitors.html', context)
+
+
+@login_required
+@user_passes_test(is_gestor)
+def approve_monitor(request, monitor_id):
+    """Aprovar um monitor específico"""
+    monitor = get_object_or_404(CustomUser, id=monitor_id, user_type='monitor')
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'approve':
+            # Marcar como aprovado (pode ser implementado com um campo específico)
+            monitor.is_active = True
+            monitor.save()
+            messages.success(request, f'Monitor "{monitor.username}" aprovado com sucesso!')
+        
+        elif action == 'reject':
+            # Rejeitar monitor (desativar ou deletar)
+            monitor.is_active = False
+            monitor.save()
+            messages.warning(request, f'Monitor "{monitor.username}" foi rejeitado.')
+        
+        return redirect('approve_monitors')
+    
+    return render(request, 'approve_monitor_detail.html', {'monitor': monitor})
 

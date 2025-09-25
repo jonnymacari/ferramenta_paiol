@@ -16,4 +16,11 @@ urlpatterns = [
     path('delete-user/<int:user_id>/', views.delete_user, name='delete_user'),
     path('user-detail/<int:user_id>/', views.user_detail, name='user_detail'),
     path('bulk-create-users/', views.bulk_create_users, name='bulk_create_users'),
+    
+    # Dashboard BI
+    path('bi-dashboard/', views.bi_dashboard, name='bi_dashboard'),
+    
+    # Aprovação de monitores
+    path('approve-monitors/', views.approve_monitors, name='approve_monitors'),
+    path('approve-monitor/<int:monitor_id>/', views.approve_monitor, name='approve_monitor'),
 ]
