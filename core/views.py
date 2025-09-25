@@ -94,6 +94,12 @@ def home_gestor(request):
     interesses_pendentes = InteresseTemporada.objects.filter(status='pendente').count()
     temporadas_sem_email = Temporada.objects.filter(email_enviado=False).count()
     
+    # Monitores pendentes de aprovação
+    monitores_pendentes_aprovacao = CustomUser.objects.filter(
+        user_type='monitor',
+        is_approved=False
+    ).count()
+    
     # Informações de todos os usuários para o dashboard do gestor
     total_usuarios = CustomUser.objects.count()
     usuarios_por_tipo = {
@@ -109,6 +115,7 @@ def home_gestor(request):
         'total_temporadas': total_temporadas,
         'interesses_pendentes': interesses_pendentes,
         'temporadas_sem_email': temporadas_sem_email,
+        'monitores_pendentes_aprovacao': monitores_pendentes_aprovacao,
         'total_usuarios': total_usuarios,
         'usuarios_por_tipo': usuarios_por_tipo,
         'ultimos_usuarios': ultimos_usuarios,
@@ -119,6 +126,14 @@ def home_gestor(request):
 @user_passes_test(is_monitor)
 def home_monitor(request):
     from temporadas.models import Temporada, InteresseTemporada
+
+    # Verificar se o monitor foi aprovado
+    if not request.user.is_approved:
+        return render(request, 'home_monitor.html', {
+            'temporadas_disponiveis': 0,
+            'minhas_temporadas': 0,
+            'aguardando_aprovacao': True
+        })
 
     # IDs das temporadas que o monitor já se envolveu (interesse ou confirmação)
     temporadas_relacionadas = InteresseTemporada.objects.filter(
@@ -137,7 +152,8 @@ def home_monitor(request):
 
     return render(request, 'home_monitor.html', {
         'temporadas_disponiveis': temporadas_disponiveis,
-        'minhas_temporadas': minhas_temporadas
+        'minhas_temporadas': minhas_temporadas,
+        'aguardando_aprovacao': False
     })
 
 
@@ -201,13 +217,13 @@ def manage_users(request):
 def create_user(request):
     """Criar novo usuário"""
     if request.method == 'POST':
-        form = UserManagementForm(request.POST)
+        form = UserManagementForm(request.POST, current_user=request.user)
         if form.is_valid():
             user = form.save()
             messages.success(request, f'Usuário "{user.username}" criado com sucesso!')
             return redirect('manage_users')
     else:
-        form = UserManagementForm()
+        form = UserManagementForm(current_user=request.user)
     
     return render(request, 'create_user.html', {'form': form})
 
@@ -219,13 +235,13 @@ def edit_user(request, user_id):
     user = get_object_or_404(CustomUser, id=user_id)
     
     if request.method == 'POST':
-        form = UserManagementForm(request.POST, instance=user, is_edit=True)
+        form = UserManagementForm(request.POST, instance=user, is_edit=True, current_user=request.user)
         if form.is_valid():
             form.save()
             messages.success(request, f'Usuário "{user.username}" atualizado com sucesso!')
             return redirect('manage_users')
     else:
-        form = UserManagementForm(instance=user, is_edit=True)
+        form = UserManagementForm(instance=user, is_edit=True, current_user=request.user)
     
     return render(request, 'edit_user.html', {'form': form, 'user_obj': user})
 
@@ -391,10 +407,10 @@ def bi_dashboard(request):
 @user_passes_test(is_gestor)
 def approve_monitors(request):
     """Página para aprovar monitores pendentes"""
-    # Por enquanto, vamos mostrar todos os monitores com cadastro incompleto
+    # Mostrar monitores que não foram aprovados ainda (auto-cadastros)
     monitores_pendentes = CustomUser.objects.filter(
         user_type='monitor',
-        cadastro_completo=False
+        is_approved=False
     ).order_by('-date_joined')
     
     context = {
@@ -414,16 +430,16 @@ def approve_monitor(request, monitor_id):
         action = request.POST.get('action')
         
         if action == 'approve':
-            # Marcar como aprovado (pode ser implementado com um campo específico)
-            monitor.is_active = True
+            # Marcar como aprovado
+            monitor.is_approved = True
             monitor.save()
-            messages.success(request, f'Monitor "{monitor.username}" aprovado com sucesso!')
+            messages.success(request, f'Monitor "{monitor.username}" aprovado com sucesso! Agora pode acessar temporadas e receber emails.')
         
         elif action == 'reject':
-            # Rejeitar monitor (desativar ou deletar)
+            # Rejeitar monitor (desativar)
             monitor.is_active = False
             monitor.save()
-            messages.warning(request, f'Monitor "{monitor.username}" foi rejeitado.')
+            messages.warning(request, f'Monitor "{monitor.username}" foi rejeitado e desativado.')
         
         return redirect('approve_monitors')
     

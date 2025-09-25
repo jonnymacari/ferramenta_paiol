@@ -153,6 +153,9 @@ class CustomUser(AbstractUser):
         return int((preenchidos / total_campos) * 100)
     
     def save(self, *args, **kwargs):
+        # Verificar se é um novo usuário
+        is_new = self.pk is None
+        
         # Para monitores, verificar se o cadastro está completo
         if self.user_type == 'monitor':
             # Cadastro básico completo
@@ -179,8 +182,14 @@ class CustomUser(AbstractUser):
             )
             
             self.cadastro_completo = cadastro_basico and cadastro_detalhado
+            
+            # Se é um novo monitor criado por auto-cadastro, não aprovar automaticamente
+            # Monitores criados por gestores/admins são aprovados automaticamente
+            if is_new and not hasattr(self, '_created_by_manager'):
+                self.is_approved = False
         else:
-            # Para outros tipos de usuário, considerar sempre completo
+            # Para outros tipos de usuário, considerar sempre completo e aprovado
             self.cadastro_completo = True
+            self.is_approved = True
         
         super().save(*args, **kwargs)

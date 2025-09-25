@@ -207,7 +207,16 @@ class UserManagementForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.is_edit = kwargs.pop('is_edit', False)
+        self.current_user = kwargs.pop('current_user', None)
         super().__init__(*args, **kwargs)
+        
+        # Restringir tipos de usuário para gestores
+        if self.current_user and self.current_user.user_type == 'gestor':
+            # Gestores só podem criar gestores e monitores, não admins
+            self.fields['user_type'].choices = [
+                ('gestor', 'Gestor'),
+                ('monitor', 'Monitor'),
+            ]
         
         if self.is_edit:
             self.fields['password'].help_text = 'Deixe em branco para manter a senha atual'
@@ -237,6 +246,10 @@ class UserManagementForm(forms.ModelForm):
         # Se uma nova senha foi fornecida
         if self.cleaned_data.get('password'):
             user.set_password(self.cleaned_data['password'])
+        
+        # Marcar que este usuário foi criado por um gestor/admin
+        # Isso fará com que monitores sejam aprovados automaticamente
+        user._created_by_manager = True
         
         if commit:
             user.save()
@@ -323,66 +336,7 @@ class CSVUploadForm(forms.Form):
         return users_to_create, errors
 
 
-class UserManagementForm(forms.ModelForm):
-    """Formulário para gestores criarem/editarem usuários"""
-    
-    password = forms.CharField(
-        widget=forms.PasswordInput(attrs={'class': 'form-control'}),
-        required=False,
-        label='Senha',
-        help_text='Deixe em branco para manter a senha atual (apenas na edição)'
-    )
-    
-    class Meta:
-        model = CustomUser
-        fields = [
-            'username', 'email', 'first_name', 'last_name', 
-            'user_type', 'cpf', 'telefone', 'endereco_simples', 'data_nascimento'
-        ]
-        labels = {
-            'username': 'Nome de usuário',
-            'email': 'E-mail',
-            'first_name': 'Nome',
-            'last_name': 'Sobrenome',
-            'user_type': 'Tipo de usuário',
-            'cpf': 'CPF',
-            'telefone': 'Telefone',
-            'endereco_simples': 'Endereço',
-            'data_nascimento': 'Data de Nascimento'
-        }
-        widgets = {
-            'username': forms.TextInput(attrs={'class': 'form-control'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control'}),
-            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'user_type': forms.Select(attrs={'class': 'form-control'}),
-            'cpf': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '000.000.000-00'}),
-            'telefone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '(11) 99999-9999'}),
-            'endereco': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'data_nascimento': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-        }
 
-    def __init__(self, *args, **kwargs):
-        self.is_edit = kwargs.pop('is_edit', False)
-        super().__init__(*args, **kwargs)
-        
-        if self.is_edit:
-            self.fields['password'].help_text = 'Deixe em branco para manter a senha atual'
-            self.fields['password'].required = False
-        else:
-            self.fields['password'].required = True
-            self.fields['password'].help_text = 'Digite uma senha para o usuário'
-
-    def save(self, commit=True):
-        user = super().save(commit=False)
-        
-        # Se uma nova senha foi fornecida
-        if self.cleaned_data.get('password'):
-            user.set_password(self.cleaned_data['password'])
-        
-        if commit:
-            user.save()
-        return user
 
 
 class CSVUploadForm(forms.Form):

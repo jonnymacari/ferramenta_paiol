@@ -32,7 +32,7 @@ def listar_temporadas(request):
     return render(request, 'lista_temporadas.html', {'temporadas': temporadas})
 
 @login_required
-@user_passes_test(lambda u: u.user_type == 'monitor')
+@user_passes_test(lambda u: u.user_type == 'monitor' and u.is_approved)
 def listar_temporadas_monitor(request):
     hoje = timezone.now().date()
     temporadas_disponiveis = Temporada.objects.filter(data_fim__gte=hoje).exclude(
@@ -43,7 +43,7 @@ def listar_temporadas_monitor(request):
     })
 
 @login_required
-@user_passes_test(lambda u: u.user_type == 'monitor')
+@user_passes_test(lambda u: u.user_type == 'monitor' and u.is_approved)
 def demonstrar_interesse(request, temporada_id):
     temporada = Temporada.objects.get(id=temporada_id)
     interesse, created = InteresseTemporada.objects.get_or_create(

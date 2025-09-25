@@ -15,7 +15,7 @@
     </div>
   </div>
 
-  <div class="col-md-4">
+  <div class="col-md-3">
     <div class="card border-warning">
       <div class="card-body text-warning">
         <h5 class="card-title">Interesses Pendentes</h5>
@@ -25,7 +25,17 @@
     </div>
   </div>
 
-  <div class="col-md-4">
+  <div class="col-md-3">
+    <div class="card border-danger">
+      <div class="card-body text-danger">
+        <h5 class="card-title">Monitores Pendentes</h5>
+        <p class="card-text display-6">{{ monitores_pendentes_aprovacao }}</p>
+        <a href="{% url 'approve_monitors' %}" class="btn btn-outline-danger">Aprovar Monitores</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
     <div class="card border-info">
       <div class="card-body text-info">
         <h5 class="card-title">E-mails Não Enviados</h5>

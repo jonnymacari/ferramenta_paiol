@@ -4,7 +4,14 @@
 {% block content %}
 <h2 class="mb-4">Bem-vindo(a), {{ user.first_name|default:user.username }}! 🎒</h2>
 
-{% if not user.cadastro_completo %}
+{% if aguardando_aprovacao %}
+<div class="alert alert-info alert-dismissible fade show" role="alert">
+  <strong><i class="fas fa-clock"></i> Aguardando Aprovação!</strong> 
+  Seu cadastro foi realizado com sucesso, mas precisa ser aprovado por um gestor antes que você possa acessar as temporadas e receber emails. 
+  Você será notificado quando sua conta for aprovada.
+  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% elif not user.cadastro_completo %}
 <div class="alert alert-warning alert-dismissible fade show" role="alert">
   <strong>Atenção!</strong> Seu cadastro está incompleto. Complete suas informações para ter acesso total ao sistema.
   <a href="{% url 'complete_profile' %}" class="btn btn-sm btn-warning ms-2">Completar Perfil</a>
