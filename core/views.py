@@ -406,11 +406,10 @@ def bi_dashboard(request):
 @login_required
 @user_passes_test(is_gestor)
 def approve_monitors(request):
-    """Página para aprovar monitores pendentes"""
-    # Mostrar monitores que não foram aprovados ainda (auto-cadastros)
+    """Página para aprovar monitores - mostra todos os monitores para controle completo"""
+    # Mostrar todos os monitores para controle total do gestor
     monitores_pendentes = CustomUser.objects.filter(
-        user_type='monitor',
-        is_approved=False
+        user_type='monitor'
     ).order_by('-date_joined')
     
     context = {
@@ -423,23 +422,31 @@ def approve_monitors(request):
 @login_required
 @user_passes_test(is_gestor)
 def approve_monitor(request, monitor_id):
-    """Aprovar um monitor específico"""
+    """Controlar aprovação de monitores - aprovar ou desaprovar"""
     monitor = get_object_or_404(CustomUser, id=monitor_id, user_type='monitor')
     
     if request.method == 'POST':
         action = request.POST.get('action')
         
         if action == 'approve':
-            # Marcar como aprovado
+            # Aprovar monitor
             monitor.is_approved = True
+            monitor.is_active = True  # Garantir que está ativo também
             monitor.save()
-            messages.success(request, f'Monitor "{monitor.username}" aprovado com sucesso! Agora pode acessar temporadas e receber emails.')
+            messages.success(request, f'✅ Monitor "{monitor.username}" aprovado com sucesso! Agora pode acessar temporadas e receber emails.')
+        
+        elif action == 'disapprove':
+            # Remover aprovação do monitor
+            monitor.is_approved = False
+            monitor.save()
+            messages.warning(request, f'⚠️ Aprovação do monitor "{monitor.username}" foi removida. Ele não poderá mais acessar temporadas até nova aprovação.')
         
         elif action == 'reject':
-            # Rejeitar monitor (desativar)
+            # Rejeitar monitor (desativar completamente)
             monitor.is_active = False
+            monitor.is_approved = False
             monitor.save()
-            messages.warning(request, f'Monitor "{monitor.username}" foi rejeitado e desativado.')
+            messages.error(request, f'❌ Monitor "{monitor.username}" foi rejeitado e desativado.')
         
         return redirect('approve_monitors')
     
