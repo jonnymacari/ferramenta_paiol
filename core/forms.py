@@ -15,20 +15,9 @@ class CustomUserCreationForm(UserCreationForm):
         help_text='Campo obrigatório. Digite um e-mail válido.'
     )
     
-    cpf = forms.CharField(
-        max_length=14, 
-        required=True,
-        label='CPF',
-        widget=forms.TextInput(attrs={
-            'placeholder': '000.000.000-00',
-            'class': 'form-control'
-        }),
-        help_text='Campo obrigatório. Digite apenas números.'
-    )
-    
     class Meta:
         model = CustomUser
-        fields = ['username', 'email', 'cpf', 'password1', 'password2']
+        fields = ['username', 'email', 'password1', 'password2']
         labels = {
             'username': 'Nome de usuário',
             'email': 'E-mail',
@@ -71,27 +60,11 @@ class CustomUserCreationForm(UserCreationForm):
         
         return email
 
-    def clean_cpf(self):
-        cpf = self.cleaned_data.get('cpf')
-        if not cpf:
-            raise forms.ValidationError('O campo CPF é obrigatório.')
-        
-        # Remover caracteres não numéricos
-        cpf_numbers = ''.join(filter(str.isdigit, cpf))
-        
-        if len(cpf_numbers) != 11:
-            raise forms.ValidationError('CPF deve conter 11 dígitos.')
-        
-        if CustomUser.objects.filter(cpf=cpf_numbers).exists():
-            raise forms.ValidationError('Este CPF já está cadastrado.')
-        
-        return cpf_numbers
-
     def save(self, commit=True):
         user = super().save(commit=False)
         user.user_type = 'monitor'  # Define automaticamente como monitor
         user.email = self.cleaned_data['email']
-        user.cpf = self.cleaned_data['cpf']
+        # CPF será preenchido posteriormente no perfil
         if commit:
             user.save()
         return user
@@ -102,10 +75,11 @@ class CompleteProfileForm(forms.ModelForm):
     
     class Meta:
         model = CustomUser
-        fields = ['first_name', 'last_name', 'telefone', 'endereco_simples', 'data_nascimento']
+        fields = ['first_name', 'last_name', 'cpf', 'telefone', 'endereco_simples', 'data_nascimento']
         labels = {
             'first_name': 'Nome',
             'last_name': 'Sobrenome',
+            'cpf': 'CPF',
             'telefone': 'Telefone',
             'endereco_simples': 'Endereço',
             'data_nascimento': 'Data de Nascimento'
@@ -118,6 +92,10 @@ class CompleteProfileForm(forms.ModelForm):
             'last_name': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Digite seu sobrenome'
+            }),
+            'cpf': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '000.000.000-00'
             }),
             'telefone': forms.TextInput(attrs={
                 'class': 'form-control', 
@@ -136,6 +114,7 @@ class CompleteProfileForm(forms.ModelForm):
         help_texts = {
             'first_name': 'Campo obrigatório.',
             'last_name': 'Campo obrigatório.',
+            'cpf': 'Campo obrigatório. Digite apenas números.',
             'telefone': 'Campo obrigatório. Formato: (11) 99999-9999',
             'endereco_simples': 'Campo obrigatório. Digite seu endereço completo.',
             'data_nascimento': 'Campo obrigatório.',
