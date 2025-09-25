@@ -29,11 +29,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("SECRET_KEY", "unsafe-dev-key")
 DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
-# Hosts/CSRF para produção (Railway)
-ALLOWED_HOSTS = [h.strip() for h in os.getenv("ALLOWED_HOSTS", ".railway.app,localhost,127.0.0.1").split(",")]
+# aceita lista por env e, se a env não vier, libera os domínios do Railway
+_ALLOWED = os.getenv("ALLOWED_HOSTS", ".up.railway.app,localhost,127.0.0.1")
+ALLOWED_HOSTS = [h.strip() for h in _ALLOWED.split(",") if h.strip()]
 
 # Inclui https://<host> para CSRF em produção
-CSRF_TRUSTED_ORIGINS = []
+_CSRF = os.getenv("CSRF_TRUSTED_ORIGINS", "")
+if _CSRF:
+    CSRF_TRUSTED_ORIGINS = [o.strip() for o in _CSRF.split(",") if o.strip()]
 for h in ALLOWED_HOSTS:
     h = h.strip()
     if h and "." in h and not h.startswith("http"):
@@ -62,7 +65,6 @@ LOGOUT_REDIRECT_URL = '/login/'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',  # Para servir arquivos estáticos
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
