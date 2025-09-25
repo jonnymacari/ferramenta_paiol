@@ -119,6 +119,100 @@ def enviar_emails_temporadas(request):
     return redirect('lista_temporadas')
 
 @login_required
+@require_POST
+@user_passes_test(is_gestor)
+def habilitar_reenvio_email(request, temporada_id):
+    """View para habilitar o reenvio de email para uma temporada específica"""
+    try:
+        temporada = get_object_or_404(Temporada, id=temporada_id)
+        temporada.email_enviado = False
+        temporada.save()
+        
+        return JsonResponse({
+            'success': True, 
+            'message': 'Reenvio de email habilitado com sucesso'
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False, 
+            'message': f'Erro ao habilitar reenvio: {str(e)}'
+        })
+
+@login_required
+def api_temporadas_json(request):
+    if request.user.user_type == 'gestor':
+        temporadas = Temporada.objects.all()
+    else:
+        temporadas_ids = InteresseTemporada.objects.filter(
+            monitor=request.user,
+            status='confirmado'
+        ).values_list('temporada', flat=True)
+        temporadas = Temporada.objects.filter(id__in=temporadas_ids)
+
+    cores = [
+        {"bg": "#0865AF", "border": "#054a7e"},
+        {"bg": "#FEBD02", "border": "#d4a901"},
+        {"bg": "#28a745", "border": "#1e7e34"},
+        {"bg": "#dc3545", "border": "#a71d2a"},
+        {"bg": "#6f42c1", "border": "#5936a2"},
+        {"bg": "#20c997", "border": "#159b7e"},
+    ]
+
+    eventos = []
+    for idx, t in enumerate(temporadas):
+        cor = cores[idx % len(cores)]  # troca as cores ciclicamente
+        eventos.append({
+            "id": t.id,
+            "title": t.nome,
+            "start": t.data_inicio.isoformat(),
+            "end": (t.data_fim + timedelta(days=1)).isoformat(),
+            "backgroundColor": cor["bg"],
+            "borderColor": cor["border"],
+            "extendedProps": {
+                "cliente": t.cliente,
+                "tipo": t.get_tipo_display(),
+                "data_inicio": t.data_inicio.strftime('%d/%m/%Y'),
+                "data_fim": t.data_fim.strftime('%d/%m/%Y')
+            }
+        })
+
+
+    return JsonResponse(eventos, safe=False)
+
+@login_required
+def calendario_novo_view(request):
+    return render(request, 'calendario_full.html')
+
+@login_required
+@user_passes_test(is_gestor)
+def detalhes_temporada(request, temporada_id):
+    temporada = get_object_or_404(Temporada, id=temporada_id)
+
+    if request.method == 'POST':
+        form = TemporadaForm(request.POST, instance=temporada)
+        if form.is_valid():
+            form.save()
+            return redirect('lista_temporadas')
+    else:
+        form = TemporadaForm(instance=temporada)
+
+    return render(request, 'detalhes_temporada.html', {
+        'temporada': temporada,
+        'form': form
+    })
+
+@login_required
+@user_passes_test(is_monitor)
+def visualizar_temporada_monitor(request, temporada_id):
+    temporada = get_object_or_404(Temporada, id=temporada_id)
+
+    # Futuro: incluir outras infos como documentos, status etc.
+    return render(request, 'visualizar_temporada_monitor.html', {
+        'temporada': temporada
+    })
+
+@login_required
 def api_temporadas_json(request):
     if request.user.user_type == 'gestor':
         temporadas = Temporada.objects.all()
