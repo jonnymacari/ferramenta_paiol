@@ -125,9 +125,13 @@ def home_monitor(request):
         monitor=request.user
     ).values_list('temporada_id', flat=True)
 
-    # Temporadas enviadas por email, mas que o monitor ainda não demonstrou interesse
+    # Temporadas disponíveis que o monitor ainda não demonstrou interesse
+    # Incluindo temporadas futuras (data_fim >= hoje)
+    from django.utils import timezone
+    hoje = timezone.now().date()
+    
     temporadas_disponiveis = Temporada.objects.filter(
-        email_enviado=True
+        data_fim__gte=hoje  # Apenas temporadas futuras ou em andamento
     ).exclude(id__in=temporadas_relacionadas).count()
 
     minhas_temporadas = InteresseTemporada.objects.filter(

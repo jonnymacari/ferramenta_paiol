@@ -18,7 +18,7 @@
     <tbody>
       {% for temporada in temporadas %}
       <tr onclick="window.location.href='{% url 'visualizar_temporada_monitor' temporada.id %}'" style="cursor:pointer;">
-        <td><strong>{{ temporada.nome }}</strong></td>
+        <td><strong>{{ temporada }}</strong></td>
         <td>{{ temporada.data_inicio }}</td>
         <td>{{ temporada.data_fim }}</td>
         <td>{{ temporada.status }}</td>

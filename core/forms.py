@@ -48,10 +48,11 @@ class CompleteProfileForm(forms.ModelForm):
     
     class Meta:
         model = CustomUser
-        fields = ['first_name', 'last_name', 'telefone', 'endereco', 'data_nascimento']
+        fields = ['first_name', 'last_name', 'cpf', 'telefone', 'endereco', 'data_nascimento']
         labels = {
             'first_name': 'Nome',
             'last_name': 'Sobrenome',
+            'cpf': 'CPF',
             'telefone': 'Telefone',
             'endereco': 'Endereço',
             'data_nascimento': 'Data de Nascimento'
@@ -59,9 +60,14 @@ class CompleteProfileForm(forms.ModelForm):
         widgets = {
             'first_name': forms.TextInput(attrs={'class': 'form-control'}),
             'last_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'cpf': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '000.000.000-00'}),
             'telefone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '(11) 99999-9999'}),
-            'endereco': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'endereco': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Digite seu endereço completo'}),
             'data_nascimento': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        }
+        help_texts = {
+            'cpf': 'Digite apenas números ou use o formato 000.000.000-00',
+            'endereco': 'Endereço completo incluindo rua, número, bairro, cidade e CEP',
         }
 
 

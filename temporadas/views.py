@@ -113,9 +113,24 @@ def resposta_participacao(request, interesse_id):
 @login_required
 @user_passes_test(is_gestor)
 def enviar_emails_temporadas(request):
+    from django.contrib import messages
+    
     ids = request.POST.getlist('temporadas')
     temporadas = Temporada.objects.filter(id__in=ids, email_enviado=False)
-    enviar_email_temporadas_abertas(temporadas)
+    
+    if not temporadas.exists():
+        messages.warning(request, 'Nenhuma temporada válida selecionada para envio de email.')
+        return redirect('lista_temporadas')
+    
+    try:
+        sucesso = enviar_email_temporadas_abertas(temporadas)
+        if sucesso:
+            messages.success(request, f'Emails enviados com sucesso para {temporadas.count()} temporada(s)!')
+        else:
+            messages.error(request, 'Erro ao enviar emails. Verifique as configurações de email.')
+    except Exception as e:
+        messages.error(request, f'Erro ao enviar emails: {str(e)}')
+    
     return redirect('lista_temporadas')
 
 @login_required
@@ -141,9 +156,14 @@ def api_temporadas_json(request):
     eventos = []
     for idx, t in enumerate(temporadas):
         cor = cores[idx % len(cores)]  # troca as cores ciclicamente
+        # Criar título baseado no tipo e cliente
+        titulo = f"{t.get_tipo_display()}"
+        if t.cliente:
+            titulo += f" - {t.cliente}"
+            
         eventos.append({
             "id": t.id,
-            "title": t.nome,
+            "title": titulo,
             "start": t.data_inicio.isoformat(),
             "end": (t.data_fim + timedelta(days=1)).isoformat(),
             "backgroundColor": cor["bg"],
@@ -152,7 +172,8 @@ def api_temporadas_json(request):
                 "cliente": t.cliente,
                 "tipo": t.get_tipo_display(),
                 "data_inicio": t.data_inicio.strftime('%d/%m/%Y'),
-                "data_fim": t.data_fim.strftime('%d/%m/%Y')
+                "data_fim": t.data_fim.strftime('%d/%m/%Y'),
+                "numero_diarias": str(t.numero_diarias)
             }
         })
 
