@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block title %}Equipe da Temporada{% endblock %}
+{% block content %}
+<h2>Equipe - {{ temporada.nome }}</h2>
+<form method="post" class="mt-3">
+  {% csrf_token %}
+  <table class="table table-bordered align-middle">
+    <thead>
+      <tr>
+        <th>Monitor</th>
+        <th>Status</th>
+        <th>Ajuda de Custo</th>
+        <th>Embarque</th>
+        <th>Desembarque</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in equipe %}
+      <tr>
+        <td>{{ m.monitor.nome_display }}</td>
+        <td>
+          <select name="m_{{ m.id }}_status" class="form-select form-select-sm">
+            {% for value,label in m._meta.get_field('status').choices %}
+            <option value="{{ value }}" {% if m.status == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </td>
+        <td>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="m_{{ m.id }}_recebe_ajuda_custo" {% if m.recebe_ajuda_custo %}checked{% endif %}>
+            <label class="form-check-label">Recebe</label>
+          </div>
+          <select name="m_{{ m.id }}_ajuda_custo_classe" class="form-select form-select-sm mt-1">
+            <option value="">-- Selecione --</option>
+            {% for a in ajudas %}
+            <option value="{{ a.id }}" {% if m.ajuda_custo_classe and m.ajuda_custo_classe.id == a.id %}selected{% endif %}>{{ a.nome }} (R$ {{ a.valor }})</option>
+            {% endfor %}
+          </select>
+        </td>
+        <td>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="m_{{ m.id }}_recebe_embarque" {% if m.recebe_embarque %}checked{% endif %}>
+            <label class="form-check-label">Recebe</label>
+          </div>
+          <input type="text" class="form-control form-control-sm mt-1" name="m_{{ m.id }}_valor_embarque_especial" value="{{ m.valor_embarque_especial }}" placeholder="Valor especial (opcional)">
+        </td>
+        <td>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="m_{{ m.id }}_recebe_desembarque" {% if m.recebe_desembarque %}checked{% endif %}>
+            <label class="form-check-label">Recebe</label>
+          </div>
+          <input type="text" class="form-control form-control-sm mt-1" name="m_{{ m.id }}_valor_desembarque_especial" value="{{ m.valor_desembarque_especial }}" placeholder="Valor especial (opcional)">
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="text-muted">Nenhum membro na equipe desta temporada.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <button type="submit" class="btn btn-primary">Salvar alterações</button>
+</form>
+{% endblock %}
+

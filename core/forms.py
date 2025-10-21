@@ -148,7 +148,7 @@ class UserManagementForm(forms.ModelForm):
         model = CustomUser
         fields = [
             'username', 'email', 'first_name', 'last_name', 
-            'user_type', 'cpf', 'telefone', 'endereco_simples', 'data_nascimento'
+            'user_type', 'categoria', 'ajuda_custo_classe', 'cpf', 'telefone', 'endereco_simples', 'data_nascimento'
         ]
         labels = {
             'username': 'Nome de usuário',

@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Relatório do Monitor{% endblock %}
+{% block content %}
+<h2>Relatório por Temporada</h2>
+<table class="table table-striped align-middle mt-3">
+  <thead>
+    <tr>
+      <th>Temporada</th>
+      <th>Função</th>
+      <th>Valor Diária</th>
+      <th>Nº Diárias</th>
+      <th>Ajuda</th>
+      <th>Embarque</th>
+      <th>Desembarque</th>
+      <th>Status</th>
+      <th>Total</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for i in itens %}
+    <tr>
+      <td>{{ i.temporada.nome }}</td>
+      <td>{{ i.funcao }}</td>
+      <td>R$ {{ i.valor_diaria }}</td>
+      <td>{{ i.numero_diarias }}</td>
+      <td>R$ {{ i.ajuda }}</td>
+      <td>R$ {{ i.embarque }}</td>
+      <td>R$ {{ i.desembarque }}</td>
+      <td>{{ i.status }}</td>
+      <td><strong>R$ {{ i.total }}</strong></td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="9" class="text-muted">Nenhuma participação encontrada.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
+

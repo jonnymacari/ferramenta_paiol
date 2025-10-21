@@ -16,4 +16,13 @@ urlpatterns = [
     path('api/temporadas/', views.api_temporadas_json, name='api_temporadas_json'),
     path('<int:temporada_id>/', views.detalhes_temporada, name='detalhes_temporada'),
     path('<int:temporada_id>/visualizar/', views.visualizar_temporada_monitor, name='visualizar_temporada_monitor'),
+    # Configurações de valores e ajudas (somente gestores)
+    path('configurar-valores/', views.configurar_valores, name='configurar_valores'),
+    path('ajudas-custo/', views.listar_ajudas_custo, name='listar_ajudas_custo'),
+    path('ajudas-custo/nova/', views.editar_ajuda_custo, name='nova_ajuda_custo'),
+    path('ajudas-custo/<int:ajuda_id>/', views.editar_ajuda_custo, name='editar_ajuda_custo'),
+    # Gestão de equipe por temporada
+    path('<int:temporada_id>/equipe/', views.gerenciar_equipe_temporada, name='gerenciar_equipe_temporada'),
+    # Relatório do monitor
+    path('relatorio/', views.relatorio_monitor, name='relatorio_monitor'),
 ]

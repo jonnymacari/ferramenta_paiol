@@ -1,9 +1,16 @@
 from django.core.mail import send_mail
 from core.models import CustomUser
 
+
 def enviar_email_temporadas_abertas(temporadas):
+    """Envia e-mails e retorna um resumo do envio."""
     monitores = CustomUser.objects.filter(user_type='monitor').exclude(email='').distinct()
-    destinatarios = [monitor.email for monitor in monitores]
+    destinatarios = [m.email for m in monitores]
+
+    resumo = {
+        'total_monitores': len(destinatarios),
+        'por_temporada': []
+    }
 
     for temporada in temporadas:
         assunto = f"Nova temporada disponível: {temporada.nome}"
@@ -12,8 +19,8 @@ Olá! Uma nova temporada foi aberta:
 
 Nome: {temporada.nome}
 Data: {temporada.data_inicio} a {temporada.data_fim}
-Cliente: {temporada.cliente}
-Tipo: {temporada.get_tipo_display}
+Cliente: {temporada.cliente or '-'}
+Tipo: {temporada.get_tipo_display()}
 
 Acesse o sistema para demonstrar interesse.
 
@@ -28,6 +35,14 @@ Equipe do Acampamento.
         )
         temporada.email_enviado = True
         temporada.save()
+        resumo['por_temporada'].append({
+            'id': temporada.id,
+            'nome': temporada.nome,
+            'enviados': len(destinatarios),
+        })
+
+    return resumo
+
 
 def enviar_email_aprovacao(interesse):
     send_mail(
@@ -46,8 +61,11 @@ Equipe do Acampamento.
         fail_silently=False
     )
 
+
 def is_gestor(user):
     return user.is_authenticated and user.user_type == 'gestor'
 
+
 def is_monitor(user):
     return user.is_authenticated and user.user_type == 'monitor'
+
