@@ -7,6 +7,19 @@ USER_TYPES = (
     ('monitor', 'Monitor'),
 )
 
+# Categorias/Funções de monitor
+CATEGORIA_CHOICES = (
+    ('conselheiro_senior', 'Conselheiro Senior'),
+    ('conselheiro', 'Conselheiro'),
+    ('monitor', 'Monitor'),
+    ('monitor_junior', 'Monitor Junior'),
+    ('estagiario', 'Estagiário'),
+    ('enfermeira', 'Enfermeira'),
+    ('enfermeira_estagiaria', 'Enfermeira Estagiária'),
+    ('fotografo_1', 'Fotógrafo 1'),
+    ('fotografo_2', 'Fotógrafo 2'),
+)
+
 ESTADO_CIVIL_CHOICES = (
     ('solteiro', 'Solteiro(a)'),
     ('casado', 'Casado(a)'),
@@ -79,6 +92,12 @@ class CustomUser(AbstractUser):
     # Endereço completo (relacionamento)
     endereco_completo = models.OneToOneField(Endereco, on_delete=models.CASCADE, blank=True, null=True, verbose_name='Endereço Completo')
     
+    # Categoria/Função (editável apenas por gestor via formulários/views)
+    categoria = models.CharField(max_length=30, choices=CATEGORIA_CHOICES, blank=True, null=True, verbose_name='Categoria/Função')
+
+    # Classe de ajuda de custo opcional atribuída ao monitor
+    ajuda_custo_classe = models.ForeignKey('temporadas.AjudaCustoClasse', on_delete=models.SET_NULL, blank=True, null=True, verbose_name='Classe de Ajuda de Custo')
+
     # Status do cadastro para monitores
     cadastro_completo = models.BooleanField(default=False, verbose_name='Cadastro Completo')
     is_approved = models.BooleanField(default=False, verbose_name='Aprovado pelo Gestor')

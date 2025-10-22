@@ -8,6 +8,7 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
 from .models import CustomUser
+from django.utils import timezone
 
 
 def public_home(request):
@@ -148,6 +149,17 @@ def home_monitor(request):
     minhas_temporadas = InteresseTemporada.objects.filter(
         monitor=request.user,
         status='confirmado'
+    ).count()
+
+    # Ajuste: contador de temporadas disponíveis deve refletir a listagem real
+    hoje = timezone.now().date()
+    temporadas_disponiveis = Temporada.objects.filter(data_fim__gte=hoje).exclude(
+        interessetemporada__monitor=request.user
+    ).count()
+    # Após aprovação, já deve aparecer em "Minhas temporadas"
+    minhas_temporadas = InteresseTemporada.objects.filter(
+        monitor=request.user,
+        status__in=['aprovado', 'confirmado']
     ).count()
 
     return render(request, 'home_monitor.html', {

@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.views.decorators.http import require_POST
+from django.contrib import messages
 from .forms import TemporadaForm
 from .models import Temporada, InteresseTemporada
 from django.utils import timezone
@@ -75,6 +76,13 @@ def alterar_status_interesse(request, interesse_id):
         interesse.status = novo_status
         interesse.save()
         if novo_status == 'aprovado':
+            # cria registro na equipe para gestão da temporada
+            from .models import TemporadaEquipe
+            TemporadaEquipe.objects.get_or_create(
+                temporada=interesse.temporada,
+                monitor=interesse.monitor,
+                defaults={'status': 'pendente'}
+            )
             enviar_email_aprovacao(interesse)
 
     return redirect('interessados_por_temporada', temporada_id=interesse.temporada.id)
@@ -84,7 +92,7 @@ def alterar_status_interesse(request, interesse_id):
 def minhas_participacoes(request):
     interesses = InteresseTemporada.objects.filter(
         monitor=request.user,
-        status='confirmado'
+        status__in=['aprovado', 'confirmado']
     )
     temporadas = [i.temporada for i in interesses]
 
@@ -115,7 +123,14 @@ def resposta_participacao(request, interesse_id):
 def enviar_emails_temporadas(request):
     ids = request.POST.getlist('temporadas')
     temporadas = Temporada.objects.filter(id__in=ids, email_enviado=False)
-    enviar_email_temporadas_abertas(temporadas)
+    if not temporadas:
+        messages.info(request, 'Nenhuma temporada selecionada para envio ou já enviada anteriormente.')
+        return redirect('lista_temporadas')
+
+    resumo = enviar_email_temporadas_abertas(temporadas)
+    messages.success(request, f"E-mails enviados para {resumo['total_monitores']} monitores.")
+    for item in resumo['por_temporada']:
+        messages.info(request, f"Temporada '{item['nome']}': {item['enviados']} envios.")
     return redirect('lista_temporadas')
 
 @login_required
@@ -211,6 +226,141 @@ def visualizar_temporada_monitor(request, temporada_id):
     return render(request, 'visualizar_temporada_monitor.html', {
         'temporada': temporada
     })
+
+
+@login_required
+@user_passes_test(is_gestor)
+def configurar_valores(request):
+    from .models import ConfiguracaoValores
+    instancia = ConfiguracaoValores.objects.order_by('-atualizado_em').first()
+    if request.method == 'POST':
+        from .forms import ConfiguracaoValoresForm
+        form = ConfiguracaoValoresForm(request.POST, instance=instancia)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Valores de diárias atualizados com sucesso!')
+            return redirect('configurar_valores')
+        messages.error(request, 'Corrija os erros do formulário de valores.')
+    else:
+        from .forms import ConfiguracaoValoresForm
+        form = ConfiguracaoValoresForm(instance=instancia)
+    return render(request, 'configurar_valores.html', {'form': form})
+
+
+@login_required
+@user_passes_test(is_gestor)
+def listar_ajudas_custo(request):
+    from .models import AjudaCustoClasse
+    ajudas = AjudaCustoClasse.objects.all().order_by('nome')
+    return render(request, 'listar_ajudas_custo.html', {'ajudas': ajudas})
+
+
+@login_required
+@user_passes_test(is_gestor)
+def editar_ajuda_custo(request, ajuda_id=None):
+    from .models import AjudaCustoClasse
+    ajuda = AjudaCustoClasse.objects.filter(id=ajuda_id).first()
+    from .forms import AjudaCustoClasseForm
+    if request.method == 'POST':
+        form = AjudaCustoClasseForm(request.POST, instance=ajuda)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Ajuda de custo salva com sucesso!')
+            return redirect('listar_ajudas_custo')
+        messages.error(request, 'Corrija os erros do formulário de ajuda de custo.')
+    else:
+        form = AjudaCustoClasseForm(instance=ajuda)
+    return render(request, 'editar_ajuda_custo.html', {'form': form, 'ajuda': ajuda})
+
+
+def _parse_decimal_br(valor_txt):
+    from decimal import Decimal, InvalidOperation
+    if not valor_txt:
+        return None
+    try:
+        return Decimal(str(valor_txt).replace(',', '.'))
+    except (InvalidOperation, ValueError, TypeError):
+        return None
+
+
+@login_required
+@user_passes_test(is_gestor)
+def gerenciar_equipe_temporada(request, temporada_id):
+    from .models import TemporadaEquipe, AjudaCustoClasse, Temporada
+    temporada = get_object_or_404(Temporada, id=temporada_id)
+    equipe = TemporadaEquipe.objects.filter(temporada=temporada).select_related('monitor', 'ajuda_custo_classe')
+    if request.method == 'POST':
+        for membro in equipe:
+            prefix = f"m_{membro.id}_"
+            membro.recebe_ajuda_custo = bool(request.POST.get(prefix + 'recebe_ajuda_custo'))
+            ajuda_id = request.POST.get(prefix + 'ajuda_custo_classe')
+            membro.ajuda_custo_classe = AjudaCustoClasse.objects.filter(id=ajuda_id).first() if ajuda_id else None
+            membro.recebe_embarque = bool(request.POST.get(prefix + 'recebe_embarque'))
+            membro.recebe_desembarque = bool(request.POST.get(prefix + 'recebe_desembarque'))
+            membro.valor_embarque_especial = _parse_decimal_br(request.POST.get(prefix + 'valor_embarque_especial'))
+            membro.valor_desembarque_especial = _parse_decimal_br(request.POST.get(prefix + 'valor_desembarque_especial'))
+            status = request.POST.get(prefix + 'status')
+            if status in dict(membro._meta.get_field('status').choices):
+                membro.status = status
+            membro.save()
+        messages.success(request, 'Equipe da temporada atualizada com sucesso!')
+        return redirect('gerenciar_equipe_temporada', temporada_id=temporada.id)
+
+    ajudas = AjudaCustoClasse.objects.all()
+    return render(request, 'gerenciar_equipe_temporada.html', {
+        'temporada': temporada,
+        'equipe': equipe,
+        'ajudas': ajudas,
+    })
+
+
+@login_required
+@user_passes_test(is_monitor)
+def relatorio_monitor(request):
+    from decimal import Decimal
+    from .models import TemporadaEquipe, ConfiguracaoValores
+    equipe = TemporadaEquipe.objects.filter(monitor=request.user).select_related('temporada', 'ajuda_custo_classe')
+    config = ConfiguracaoValores.objects.order_by('-atualizado_em').first()
+
+    def valor_diaria_para(user, temporada):
+        if not config:
+            return Decimal('0')
+        if temporada.tipo == 'dayuse':
+            return config.day_camp
+        mapa = {
+            'conselheiro_senior': config.conselheiro_senior,
+            'conselheiro': config.conselheiro,
+            'monitor': config.monitor,
+            'monitor_junior': config.monitor_junior,
+            'estagiario': config.estagiario,
+            'enfermeira': config.enfermeira,
+            'enfermeira_estagiaria': config.enfermeira_estagiaria,
+            'fotografo_1': config.fotografo_1,
+            'fotografo_2': config.fotografo_2,
+        }
+        return mapa.get(user.categoria, Decimal('0')) or Decimal('0')
+
+    itens = []
+    for m in equipe:
+        diaria = valor_diaria_para(request.user, m.temporada)
+        diarias = m.temporada.numero_diarias or 0
+        ajuda = m.ajuda_custo_classe.valor if (m.recebe_ajuda_custo and m.ajuda_custo_classe) else 0
+        embarque = m.valor_embarque_especial or 0
+        desembarque = m.valor_desembarque_especial or 0
+        total = (diaria * diarias) + ajuda + embarque + desembarque
+        itens.append({
+            'temporada': m.temporada,
+            'funcao': getattr(request.user, 'get_categoria_display', lambda: request.user.categoria)(),
+            'valor_diaria': diaria,
+            'numero_diarias': diarias,
+            'ajuda': ajuda,
+            'embarque': embarque,
+            'desembarque': desembarque,
+            'status': m.get_status_display(),
+            'total': total,
+        })
+
+    return render(request, 'relatorio_monitor.html', {'itens': itens})
 
 @login_required
 def api_temporadas_json(request):
